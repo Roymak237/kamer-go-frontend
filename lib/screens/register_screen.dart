@@ -111,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 preferences: prefs,
                               );
                           if (mounted) {
-                            Navigator.pushReplacementNamed(context, "/home");
+                            Navigator.pushReplacementNamed(context, "/login");
                           }
                         } catch (e) {
                           setState(() => _error = e.toString());
