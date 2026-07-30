@@ -37,6 +37,10 @@ class AuthProvider extends ChangeNotifier {
     await _service.logout();
   }
 
+  Future<User> fetchProfile() async {
+    return await _service.fetchProfile();
+  }
+
   Future<List<Itinerary>> fetchItineraries() async {
     return await _service.fetchItineraries();
   }

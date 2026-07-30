@@ -90,17 +90,37 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<User> fetchProfile() async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/me",
+    );
+    final response = await http.get(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      _currentUser = User(
+        id: data["id"] as String,
+        username: data["username"] as String,
+        preferences: List<String>.from(data["preferences"] ?? []),
+      );
+      notifyListeners();
+      return _currentUser!;
+    }
+    throw Exception("Failed to fetch profile");
+  }
+
   Future<List<Itinerary>> fetchItineraries() async {
     if (_token == null) throw Exception("Not authenticated");
     final uri = Uri.parse(
       "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/itineraries",
     );
-    final response = await http
-        .get(
-          uri,
-          headers: {"Authorization": "Bearer $_token"},
-        )
-        .timeout(AppConstants.apiTimeout);
+    final response = await http.get(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((e) => Itinerary.fromJson(e)).toList();
@@ -181,12 +201,10 @@ class AuthService extends ChangeNotifier {
     final uri = Uri.parse(
       "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/itineraries/$itineraryId",
     );
-    final response = await http
-        .delete(
-          uri,
-          headers: {"Authorization": "Bearer $_token"},
-        )
-        .timeout(AppConstants.apiTimeout);
+    final response = await http.delete(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
     if (response.statusCode != 200) {
       final data = json.decode(response.body);
       throw Exception(data["error"] ?? "Failed to delete itinerary");
@@ -222,12 +240,10 @@ class AuthService extends ChangeNotifier {
     final uri = Uri.parse(
       "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/shares/$shareId",
     );
-    final response = await http
-        .delete(
-          uri,
-          headers: {"Authorization": "Bearer $_token"},
-        )
-        .timeout(AppConstants.apiTimeout);
+    final response = await http.delete(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
     if (response.statusCode != 200) {
       final data = json.decode(response.body);
       throw Exception(data["error"] ?? "Failed to revoke share");

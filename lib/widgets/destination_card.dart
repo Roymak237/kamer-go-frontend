@@ -1,94 +1,174 @@
 import "package:flutter/material.dart";
+
 import "../models/destination.dart";
+import "../utils/theme.dart";
 
 class DestinationCard extends StatelessWidget {
   final Destination destination;
   final VoidCallback? onTap;
 
-  const DestinationCard({super.key, required this.destination, this.onTap});
+  const DestinationCard({
+    super.key,
+    required this.destination,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final tags = destination.tags.take(3).join(" • ");
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _DestinationImage(destination: destination),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          destination.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          "${((destination.avgCostPerDay / 1000).toStringAsFixed(0))}k XAF",
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          destination.region,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tags,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+    final tags = destination.tags.take(3).join("  •  ");
+    final cost =
+        "${(destination.avgCostPerDay / 1000).toStringAsFixed(0)}k XAF";
+
+    return Semantics(
+      button: onTap != null,
+      label: "${destination.name}, ${destination.region}, $cost per day",
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 7, 16, 7),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppTheme.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryDark.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.65,
+                child: _DestinationImage(destination: destination),
+              ),
+              ClipPath(
+                clipper: _TicketBodyClipper(),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
+                  color: AppTheme.surface,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              destination.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontFamily: AppTheme.displayFontFamily,
+                                    height: 1.05,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            cost,
+                            textAlign: TextAlign.right,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: AppTheme.secondary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 9),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 17,
+                            color: AppTheme.primary,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              destination.region,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                          if (onTap != null)
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppTheme.primary,
+                              size: 19,
+                            ),
+                        ],
+                      ),
+                      if (tags.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          tags.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                    letterSpacing: 0.7,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _TicketBodyClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    const notchRadius = 11.0;
+    final middle = size.height * 0.46;
+    return Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, middle - notchRadius)
+      ..arcToPoint(
+        Offset(size.width, middle + notchRadius),
+        radius: const Radius.circular(notchRadius),
+        clockwise: false,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..lineTo(0, middle + notchRadius)
+      ..arcToPoint(
+        Offset(0, middle - notchRadius),
+        radius: const Radius.circular(notchRadius),
+        clockwise: false,
+      )
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _DestinationImage extends StatelessWidget {
@@ -98,7 +178,8 @@ class _DestinationImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = destination.imageAsset.isNotEmpty ? destination.imageAsset : null;
+    final asset =
+        destination.imageAsset.isNotEmpty ? destination.imageAsset : null;
     final url = destination.imageUrl.isNotEmpty ? destination.imageUrl : null;
 
     Widget? image;
@@ -108,7 +189,7 @@ class _DestinationImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (c, o, s) => _placeholder(context),
+        errorBuilder: (context, error, stackTrace) => _placeholder(context),
       );
     } else if (url != null) {
       image = Image.network(
@@ -116,13 +197,20 @@ class _DestinationImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        loadingBuilder: (c, child, progress) {
+        loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const Center(
-            child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
           );
         },
-        errorBuilder: (c, o, s) => _placeholder(context),
+        errorBuilder: (context, error, stackTrace) => _placeholder(context),
       );
     }
 
@@ -131,15 +219,33 @@ class _DestinationImage extends StatelessWidget {
       children: [
         if (image != null) image,
         if (image == null) _placeholder(context),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black26]),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Color(0x66002E1D)],
             ),
-            padding: const EdgeInsets.fromLTRB(12, 32, 12, 8),
+          ),
+        ),
+        Positioned(
+          left: 14,
+          bottom: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              "FIELD NOTE",
+              style: TextStyle(
+                color: AppTheme.primaryDark,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         ),
       ],
@@ -148,9 +254,13 @@ class _DestinationImage extends StatelessWidget {
 
   Widget _placeholder(BuildContext context) {
     return Container(
-      color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
+      color: AppTheme.primarySoft,
       child: const Center(
-        child: Icon(Icons.image_not_supported, size: 40, color: Colors.white70),
+        child: Icon(
+          Icons.landscape_outlined,
+          size: 40,
+          color: AppTheme.primary,
+        ),
       ),
     );
   }

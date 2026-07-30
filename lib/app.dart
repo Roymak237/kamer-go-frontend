@@ -1,12 +1,13 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
+
 import "providers/auth_provider.dart";
-import "screens/splash_screen.dart";
-import "screens/login_screen.dart";
-import "screens/register_screen.dart";
-import "screens/home_screen.dart";
 import "screens/create_itinerary_screen.dart";
+import "screens/home_screen.dart";
 import "screens/itinerary_detail_screen.dart";
+import "screens/login_screen.dart";
+import "screens/profile_screen.dart";
+import "screens/register_screen.dart";
 import "utils/theme.dart";
 
 class GlobetrotterApp extends StatelessWidget {
@@ -20,14 +21,14 @@ class GlobetrotterApp extends StatelessWidget {
         title: "GlobeTrotter Cameroon",
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
-        initialRoute: "/",
+        initialRoute: "/login",
         routes: {
-          "/": (_) => const SplashScreen(),
           "/login": (_) => const LoginScreen(),
           "/register": (_) => const RegisterScreen(),
           "/home": (_) => const HomeScreen(),
           "/create_itinerary": (_) => const CreateItineraryScreen(),
           "/itinerary_detail": (_) => const ItineraryDetailScreen(),
+          "/profile": (_) => const ProfileScreen(),
         },
       ),
     );
