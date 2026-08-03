@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../models/destination.dart";
 import "../utils/theme.dart";
+import "destination_image.dart";
+import "favorite_button.dart";
 
 class DestinationCard extends StatelessWidget {
   final Destination destination;
@@ -21,7 +23,8 @@ class DestinationCard extends StatelessWidget {
 
     return Semantics(
       button: onTap != null,
-      label: "${destination.name}, ${destination.region}, $cost per day",
+      label:
+          "${destination.name}, ${destination.region}, $cost per day${destination.matchScore > 0 ? ", matches ${destination.matchScore} interests" : ""}",
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 7, 16, 7),
         decoration: BoxDecoration(
@@ -178,47 +181,10 @@ class _DestinationImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset =
-        destination.imageAsset.isNotEmpty ? destination.imageAsset : null;
-    final url = destination.imageUrl.isNotEmpty ? destination.imageUrl : null;
-
-    Widget? image;
-    if (asset != null) {
-      image = Image.asset(
-        "assets/images/$asset",
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => _placeholder(context),
-      );
-    } else if (url != null) {
-      image = Image.network(
-        url,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return const Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) => _placeholder(context),
-      );
-    }
-
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (image != null) image,
-        if (image == null) _placeholder(context),
+        DestinationImage(destination: destination),
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -228,6 +194,32 @@ class _DestinationImage extends StatelessWidget {
             ),
           ),
         ),
+        Positioned(
+          top: 10,
+          right: 10,
+          child: FavoriteButton(destination: destination),
+        ),
+        if (destination.matchScore > 0)
+          Positioned(
+            top: 12,
+            left: 14,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppTheme.accent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "${destination.matchScore} SIGNAL${destination.matchScore == 1 ? "" : "S"} MATCHED",
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ),
+          ),
         Positioned(
           left: 14,
           bottom: 12,
@@ -249,19 +241,6 @@ class _DestinationImage extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _placeholder(BuildContext context) {
-    return Container(
-      color: AppTheme.primarySoft,
-      child: const Center(
-        child: Icon(
-          Icons.landscape_outlined,
-          size: 40,
-          color: AppTheme.primary,
-        ),
-      ),
     );
   }
 }

@@ -8,6 +8,10 @@ class Destination {
   final List<String> highlights;
   final String imageUrl;
   final String imageAsset;
+  final String imageAttribution;
+  final double? latitude;
+  final double? longitude;
+  final int matchScore;
 
   Destination({
     required this.id,
@@ -19,7 +23,13 @@ class Destination {
     required this.highlights,
     this.imageUrl = "",
     this.imageAsset = "",
+    this.imageAttribution = "",
+    this.latitude,
+    this.longitude,
+    this.matchScore = 0,
   });
+
+  bool get hasCoordinates => latitude != null && longitude != null;
 
   factory Destination.fromJson(Map<String, dynamic> json) {
     return Destination(
@@ -34,6 +44,10 @@ class Destination {
       highlights: List<String>.from(json["highlights"] ?? []),
       imageUrl: json["image_url"] ?? "",
       imageAsset: json["image_asset"] ?? "",
+      imageAttribution: json["image_attribution"] ?? "",
+      latitude: (json["latitude"] as num?)?.toDouble(),
+      longitude: (json["longitude"] as num?)?.toDouble(),
+      matchScore: (json["match_score"] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -47,5 +61,9 @@ class Destination {
         "highlights": highlights,
         "image_url": imageUrl,
         "image_asset": imageAsset,
+        "image_attribution": imageAttribution,
+        if (latitude != null) "latitude": latitude,
+        if (longitude != null) "longitude": longitude,
+        "match_score": matchScore,
       };
 }

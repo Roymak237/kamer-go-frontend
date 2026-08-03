@@ -1,4 +1,5 @@
 import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:globetrotter/models/user.dart";
 import "package:globetrotter/utils/constants.dart";
@@ -15,11 +16,54 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _token != null;
 
+  Future<void> _persistToken(String token) async {
+    _token = token;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("auth_token", token);
+  }
+
+  Future<void> _replaceSession({
+    required String token,
+    required User user,
+  }) async {
+    await _persistToken(token);
+    _currentUser = user;
+    notifyListeners();
+  }
+
+  Map<String, dynamic> _decodeBody(http.Response response) {
+    final decoded = json.decode(response.body);
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+  }
+
+  Future<User> _applyRotatedSession(
+    http.Response response, {
+    required String fallback,
+  }) async {
+    if (response.statusCode != 200) {
+      final body = _decodeBody(response);
+      throw Exception(body["error"] ?? fallback);
+    }
+    final body = _decodeBody(response);
+    final token = body["token"] as String?;
+    final userJson = body["user"];
+    if (token == null || userJson is! Map<String, dynamic>) {
+      throw Exception(fallback);
+    }
+    final user = User.fromJson(userJson);
+    await _replaceSession(token: token, user: user);
+    return user;
+  }
+
   Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString("auth_token");
     if (_token != null) {
-      _currentUser = User(id: "", username: "", preferences: []);
+      _currentUser = User(
+        id: "",
+        username: "",
+        preferences: const [],
+      );
     }
     notifyListeners();
   }
@@ -44,10 +88,8 @@ class AuthService extends ChangeNotifier {
         )
         .timeout(AppConstants.apiTimeout);
 
-    if (response.statusCode == 201) {
-      return true;
-    }
-    final body = json.decode(response.body);
+    if (response.statusCode == 201) return true;
+    final body = _decodeBody(response);
     throw Exception(body["error"] ?? "Registration failed");
   }
 
@@ -70,15 +112,19 @@ class AuthService extends ChangeNotifier {
         .timeout(AppConstants.apiTimeout);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      _token = data["token"] as String;
-      _currentUser = User(id: "", username: username, preferences: []);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("auth_token", _token!);
+      final data = _decodeBody(response);
+      final token = data["token"] as String?;
+      if (token == null) throw Exception("Login failed");
+      await _persistToken(token);
+      _currentUser = User(
+        id: "",
+        username: username,
+        preferences: const [],
+      );
       notifyListeners();
       return true;
     }
-    final body = json.decode(response.body);
+    final body = _decodeBody(response);
     throw Exception(body["error"] ?? "Login failed");
   }
 
@@ -100,16 +146,165 @@ class AuthService extends ChangeNotifier {
       headers: {"Authorization": "Bearer $_token"},
     ).timeout(AppConstants.apiTimeout);
     if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      _currentUser = User(
-        id: data["id"] as String,
-        username: data["username"] as String,
-        preferences: List<String>.from(data["preferences"] ?? []),
-      );
+      _currentUser = User.fromJson(_decodeBody(response));
       notifyListeners();
       return _currentUser!;
     }
-    throw Exception("Failed to fetch profile");
+    final body = _decodeBody(response);
+    throw Exception(body["error"] ?? "Failed to fetch profile");
+  }
+
+  Future<User> refreshToken() async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/refresh",
+    );
+    final response = await http.post(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
+    return _applyRotatedSession(
+      response,
+      fallback: "Failed to refresh session",
+    );
+  }
+
+  Future<User> updateProfile({
+    String? displayName,
+    String? email,
+    String? homeRegion,
+    String? avatarUrl,
+    List<String>? preferences,
+  }) async {
+    if (_token == null) throw Exception("Not authenticated");
+    final body = <String, dynamic>{};
+    if (displayName != null) body["display_name"] = displayName;
+    if (email != null) body["email"] = email;
+    if (homeRegion != null) body["home_region"] = homeRegion;
+    if (avatarUrl != null) body["avatar_url"] = avatarUrl;
+    if (preferences != null) body["preferences"] = preferences;
+    if (body.isEmpty) throw Exception("No profile changes supplied");
+
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/profile",
+    );
+    final response = await http
+        .patch(
+          uri,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_token",
+          },
+          body: json.encode(body),
+        )
+        .timeout(AppConstants.apiTimeout);
+
+    if (response.statusCode == 200) {
+      _currentUser = User.fromJson(_decodeBody(response));
+      notifyListeners();
+      return _currentUser!;
+    }
+    final data = _decodeBody(response);
+    throw Exception(data["error"] ?? "Failed to update profile");
+  }
+
+  Future<User> updatePreferences({required List<String> preferences}) {
+    return updateProfile(preferences: preferences);
+  }
+
+  Future<User> updateUsername({
+    required String username,
+    required String currentPassword,
+  }) async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/username",
+    );
+    final response = await http
+        .patch(
+          uri,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_token",
+          },
+          body: json.encode({
+            "username": username,
+            "current_password": currentPassword,
+          }),
+        )
+        .timeout(AppConstants.apiTimeout);
+    return _applyRotatedSession(
+      response,
+      fallback: "Failed to change username",
+    );
+  }
+
+  Future<User> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/password",
+    );
+    final response = await http
+        .patch(
+          uri,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_token",
+          },
+          body: json.encode({
+            "current_password": currentPassword,
+            "new_password": newPassword,
+          }),
+        )
+        .timeout(AppConstants.apiTimeout);
+    return _applyRotatedSession(
+      response,
+      fallback: "Failed to change password",
+    );
+  }
+
+  Future<User> revokeOtherSessions() async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/sessions/revoke",
+    );
+    final response = await http.post(
+      uri,
+      headers: {"Authorization": "Bearer $_token"},
+    ).timeout(AppConstants.apiTimeout);
+    return _applyRotatedSession(
+      response,
+      fallback: "Failed to sign out other sessions",
+    );
+  }
+
+  Future<void> deleteAccount({required String currentPassword}) async {
+    if (_token == null) throw Exception("Not authenticated");
+    final uri = Uri.parse(
+      "${AppConstants.backendBaseUrl}${AppConstants.apiPrefix}/auth/account",
+    );
+    final response = await http
+        .delete(
+          uri,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_token",
+          },
+          body: json.encode({"current_password": currentPassword}),
+        )
+        .timeout(AppConstants.apiTimeout);
+    if (response.statusCode != 204) {
+      final body = _decodeBody(response);
+      throw Exception(body["error"] ?? "Failed to delete account");
+    }
+    _token = null;
+    _currentUser = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("auth_token");
+    notifyListeners();
   }
 
   Future<List<Itinerary>> fetchItineraries() async {
@@ -156,7 +351,7 @@ class AuthService extends ChangeNotifier {
         )
         .timeout(AppConstants.apiTimeout);
     if (response.statusCode != 201) {
-      final body = json.decode(response.body);
+      final body = _decodeBody(response);
       throw Exception(body["error"] ?? "Failed to create itinerary");
     }
   }
@@ -191,7 +386,7 @@ class AuthService extends ChangeNotifier {
         )
         .timeout(AppConstants.apiTimeout);
     if (response.statusCode != 200) {
-      final data = json.decode(response.body);
+      final data = _decodeBody(response);
       throw Exception(data["error"] ?? "Failed to update itinerary");
     }
   }
@@ -206,7 +401,7 @@ class AuthService extends ChangeNotifier {
       headers: {"Authorization": "Bearer $_token"},
     ).timeout(AppConstants.apiTimeout);
     if (response.statusCode != 200) {
-      final data = json.decode(response.body);
+      final data = _decodeBody(response);
       throw Exception(data["error"] ?? "Failed to delete itinerary");
     }
   }
@@ -230,7 +425,7 @@ class AuthService extends ChangeNotifier {
         )
         .timeout(AppConstants.apiTimeout);
     if (response.statusCode != 201) {
-      final data = json.decode(response.body);
+      final data = _decodeBody(response);
       throw Exception(data["error"] ?? "Failed to share itinerary");
     }
   }
@@ -245,7 +440,7 @@ class AuthService extends ChangeNotifier {
       headers: {"Authorization": "Bearer $_token"},
     ).timeout(AppConstants.apiTimeout);
     if (response.statusCode != 200) {
-      final data = json.decode(response.body);
+      final data = _decodeBody(response);
       throw Exception(data["error"] ?? "Failed to revoke share");
     }
   }

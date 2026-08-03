@@ -1,0 +1,318 @@
+import "package:flutter/material.dart";
+
+import "../models/destination.dart";
+import "../utils/theme.dart";
+import "../widgets/destination_image.dart";
+import "../widgets/destination_map.dart";
+import "../widgets/favorite_button.dart";
+
+class DestinationDetailScreen extends StatelessWidget {
+  const DestinationDetailScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final destination =
+        ModalRoute.of(context)!.settings.arguments as Destination;
+    final cost =
+        "${(destination.avgCostPerDay / 1000).toStringAsFixed(0)}k XAF / day";
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 290,
+            pinned: true,
+            backgroundColor: AppTheme.primaryDark,
+            foregroundColor: Colors.white,
+            title: Text(destination.name),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: FavoriteButton(destination: destination),
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _DestinationHeroImage(destination: destination),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Color(0xB3002E1D)],
+                        stops: [0.35, 1],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    bottom: 22,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "FIELD GUIDE / ${destination.region.toUpperCase()}",
+                          style: const TextStyle(
+                            color: AppTheme.accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          destination.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: AppTheme.displayFontFamily,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            height: 1.05,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 34),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MetaTile(
+                          icon: Icons.location_on_outlined,
+                          label: "REGION",
+                          value: destination.region,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _MetaTile(
+                          icon: Icons.payments_outlined,
+                          label: "EST. DAILY COST",
+                          value: cost,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 26),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "On the map",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontFamily: AppTheme.displayFontFamily,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "A starting point for your field notes.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (destination.hasCoordinates)
+                        Text(
+                          "${destination.latitude!.toStringAsFixed(3)}, ${destination.longitude!.toStringAsFixed(3)}",
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                    child: DestinationMap(
+                      destinations: [destination],
+                      selectedDestination: destination,
+                      height: 230,
+                      zoom: 14.5,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+                  Text(
+                    "Why go",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontFamily: AppTheme.displayFontFamily,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    destination.description,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.textSecondary,
+                          height: 1.55,
+                        ),
+                  ),
+                  if (destination.highlights.isNotEmpty) ...[
+                    const SizedBox(height: 26),
+                    Text(
+                      "Field notes",
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontFamily: AppTheme.displayFontFamily,
+                              ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...destination.highlights.map(
+                      (highlight) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 3),
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                color: AppTheme.primary,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                highlight,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(height: 1.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (destination.tags.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: destination.tags
+                          .map(
+                            (tag) => Chip(
+                              label: Text(tag),
+                              backgroundColor: AppTheme.primarySoft,
+                              side: BorderSide.none,
+                              labelStyle: const TextStyle(
+                                color: AppTheme.primaryDark,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  Text(
+                    "Save this place to keep it close while you shape your next trip.",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                          height: 1.4,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _MetaTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 13, 12, 14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.primary, size: 19),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppTheme.secondary,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.7,
+                ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DestinationHeroImage extends StatelessWidget {
+  final Destination destination;
+
+  const _DestinationHeroImage({required this.destination});
+
+  @override
+  Widget build(BuildContext context) {
+    return DestinationImage(
+      destination: destination,
+      fit: BoxFit.cover,
+    );
+  }
+}

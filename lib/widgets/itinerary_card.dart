@@ -74,21 +74,24 @@ class ItineraryCard extends StatelessWidget {
                           ),
                           if (onShare != null) ...[
                             const SizedBox(width: 8),
-                            InkResponse(
-                              onTap: onShare,
-                              radius: 22,
-                              containedInkWell: true,
-                              child: Container(
-                                width: 34,
-                                height: 34,
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.accentSoft,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.ios_share_rounded,
-                                  size: 17,
-                                  color: AppTheme.textPrimary,
+                            Tooltip(
+                              message: "Share trip",
+                              child: InkResponse(
+                                onTap: onShare,
+                                radius: 22,
+                                containedInkWell: true,
+                                child: Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.accentSoft,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.ios_share_rounded,
+                                    size: 17,
+                                    color: AppTheme.textPrimary,
+                                  ),
                                 ),
                               ),
                             ),

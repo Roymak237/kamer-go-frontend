@@ -5,7 +5,7 @@ import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/bottom_nav.dart";
 import "destinations_screen.dart";
-import "itineraries_screen.dart";
+import "map_screen.dart";
 import "profile_screen.dart";
 import "recommendations_screen.dart";
 
@@ -21,12 +21,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final username =
-        context.watch<AuthProvider>().currentUser?.username ?? "traveler";
+    final user = context.watch<AuthProvider>().currentUser;
+    final greetingName = user?.displayName.isNotEmpty == true
+        ? user!.displayName
+        : user?.username.isNotEmpty == true
+            ? user!.username
+            : "traveler";
     final pages = [
       const DestinationsScreen(),
       const RecommendationsScreen(),
-      const ItinerariesScreen(),
+      MapScreen(isActive: _currentIndex == 2),
       const ProfileScreen(showScaffold: false),
     ];
 
@@ -59,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          "Hello, $username",
+                          "Hello, $greetingName",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)

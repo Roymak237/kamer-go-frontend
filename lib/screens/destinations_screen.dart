@@ -20,6 +20,9 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
   bool _loading = true;
   String? _error;
   String? _selectedType;
+  String? _selectedRegion;
+  int? _maxCost;
+  String _sortMode = "recommended";
 
   static const _typeFilters = [
     {"label": "All", "tag": ""},
@@ -27,6 +30,19 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     {"label": "Hiking", "tag": "hiking"},
     {"label": "Landmarks", "tag": "landmark"},
     {"label": "Family", "tag": "family"},
+  ];
+
+  static const _regions = [
+    "Adamawa",
+    "Centre",
+    "East",
+    "Far North",
+    "Littoral",
+    "North",
+    "Northwest",
+    "South",
+    "Southwest",
+    "West",
   ];
 
   @override
@@ -41,21 +57,21 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadDestinations(
-      {String? query, String? tag, String? region}) async {
+  Future<void> _loadDestinations() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final results = await _api.searchDestinations(
-        query: query ?? _controller.text,
-        tag: tag,
-        region: region,
+        query: _controller.text.trim(),
+        tag: _selectedType,
+        region: _selectedRegion,
+        maxCost: _maxCost,
       );
       if (mounted) {
         setState(() {
-          _destinations = results;
+          _destinations = _sortResults(results);
           _loading = false;
         });
       }
@@ -69,8 +85,41 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     }
   }
 
+  List<Destination> _sortResults(List<Destination> destinations) {
+    final sorted = [...destinations];
+    switch (_sortMode) {
+      case "cost_low":
+        sorted.sort((a, b) => a.avgCostPerDay.compareTo(b.avgCostPerDay));
+        break;
+      case "cost_high":
+        sorted.sort((a, b) => b.avgCostPerDay.compareTo(a.avgCostPerDay));
+        break;
+      case "name":
+        sorted.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        break;
+    }
+    return sorted;
+  }
+
+  String get _sortLabel {
+    switch (_sortMode) {
+      case "cost_low":
+        return "Lowest cost";
+      case "cost_high":
+        return "Highest cost";
+      case "name":
+        return "A–Z";
+      default:
+        return "Recommended";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasAdvancedFilters = _selectedRegion != null || _maxCost != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -79,19 +128,52 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Find your next field note",
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontFamily: AppTheme.displayFontFamily,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Find your next field note",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontFamily: AppTheme.displayFontFamily,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "From quiet coastlines to mountain air, start with a place that pulls you in.",
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                    height: 1.35,
+                                  ),
+                        ),
+                      ],
                     ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "From quiet coastlines to mountain air, start with a place that pulls you in.",
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
-                      height: 1.35,
-                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: "Open destination map",
+                        onPressed: () => Navigator.pushNamed(context, "/map"),
+                        icon: const Icon(Icons.map_outlined),
+                        color: AppTheme.primary,
+                      ),
+                      IconButton(
+                        tooltip: "Open saved places",
+                        onPressed: () => Navigator.pushNamed(context, "/saved"),
+                        icon: const Icon(Icons.favorite_border_rounded),
+                        color: AppTheme.secondary,
+                      ),
+                    ],
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               TextField(
@@ -102,16 +184,13 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                   hintText: "Search places, regions, or moods",
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: IconButton(
-                    tooltip: "Filter by region",
-                    icon: const Icon(Icons.tune_rounded),
-                    onPressed: () async {
-                      final region = await _showFilterDialog(context);
-                      if (region != null) {
-                        _loadDestinations(
-                          region: region.isEmpty ? null : region,
-                        );
-                      }
-                    },
+                    tooltip: "Filter by region and budget",
+                    icon: Icon(
+                      hasAdvancedFilters
+                          ? Icons.filter_alt_rounded
+                          : Icons.tune_rounded,
+                    ),
+                    onPressed: _showFilterSheet,
                   ),
                 ),
               ),
@@ -135,19 +214,42 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                     setState(() {
                       _selectedType = tag.isEmpty || isSelected ? null : tag;
                     });
-                    _loadDestinations(tag: _selectedType);
+                    _loadDestinations();
                   },
                 ),
               );
             }).toList(),
           ),
         ),
-        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 12, 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _loading
+                      ? "Reading the guide…"
+                      : "${_destinations.length} place${_destinations.length == 1 ? "" : "s"} found",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _showSortSheet,
+                icon: const Icon(Icons.swap_vert_rounded, size: 18),
+                label: Text(_sortLabel),
+              ),
+            ],
+          ),
+        ),
         const Divider(),
         Expanded(
           child: _loading
               ? const AppLoadingView(
-                  message: "Mapping places worth the detour…")
+                  message: "Mapping places worth the detour…",
+                )
               : _error != null
                   ? ErrorStateView(
                       title: "We lost the trail.",
@@ -168,9 +270,14 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                             padding: const EdgeInsets.only(top: 4, bottom: 24),
                             itemCount: _destinations.length,
                             itemBuilder: (context, index) {
+                              final destination = _destinations[index];
                               return DestinationCard(
-                                destination: _destinations[index],
-                                onTap: () {},
+                                destination: destination,
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  "/destination_detail",
+                                  arguments: destination,
+                                ),
                               );
                             },
                           ),
@@ -180,37 +287,183 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     );
   }
 
-  Future<String?> _showFilterDialog(BuildContext context) async {
-    const regions = [
-      "Adamawa",
-      "Centre",
-      "East",
-      "Far North",
-      "Littoral",
-      "North",
-      "Northwest",
-      "South",
-      "Southwest",
-      "West",
-    ];
+  Future<void> _showFilterSheet() async {
+    var draftRegion = _selectedRegion;
+    var draftMaxCost = _maxCost;
 
-    return showDialog<String>(
+    final applied = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text("Filter by region"),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, ""),
-            child: const Text("All regions"),
-          ),
-          ...regions.map(
-            (region) => SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, region),
-              child: Text(region),
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  4,
+                  20,
+                  20 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Shape your search",
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontFamily: AppTheme.displayFontFamily,
+                              ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Combine a region and budget with your search or activity filter.",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 18),
+                    DropdownButtonFormField<String>(
+                      initialValue: draftRegion ?? "all",
+                      decoration: const InputDecoration(
+                        labelText: "Region",
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: "all",
+                          child: Text("All regions"),
+                        ),
+                        ..._regions.map(
+                          (region) => DropdownMenuItem(
+                            value: region,
+                            child: Text(region),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setModalState(
+                          () => draftRegion = value == "all" ? null : value,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: draftMaxCost?.toString() ?? "any",
+                      decoration: const InputDecoration(
+                        labelText: "Maximum daily cost",
+                        prefixIcon: Icon(Icons.payments_outlined),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "any",
+                          child: Text("Any budget"),
+                        ),
+                        DropdownMenuItem(
+                          value: "50000",
+                          child: Text("Up to 50k XAF"),
+                        ),
+                        DropdownMenuItem(
+                          value: "100000",
+                          child: Text("Up to 100k XAF"),
+                        ),
+                        DropdownMenuItem(
+                          value: "200000",
+                          child: Text("Up to 200k XAF"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setModalState(
+                          () => draftMaxCost = value == null || value == "any"
+                              ? null
+                              : int.tryParse(value),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(sheetContext, false),
+                            child: const Text("Cancel"),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(sheetContext, true),
+                            child: const Text("Apply filters"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (applied == true && mounted) {
+      setState(() {
+        _selectedRegion = draftRegion;
+        _maxCost = draftMaxCost;
+      });
+      _loadDestinations();
+    }
+  }
+
+  Future<void> _showSortSheet() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text("Sort places"),
+              subtitle: Text("Choose what to prioritize"),
             ),
-          ),
-        ],
+            ...[
+              ("recommended", "Recommended", Icons.auto_awesome_outlined),
+              ("cost_low", "Lowest cost", Icons.south_rounded),
+              ("cost_high", "Highest cost", Icons.north_rounded),
+              ("name", "Name A–Z", Icons.sort_by_alpha_rounded),
+            ].map(
+              (option) {
+                final isSelected = option.$1 == _sortMode;
+                return ListTile(
+                  selected: isSelected,
+                  leading: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_off_rounded,
+                    color:
+                        isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  ),
+                  title: Text(option.$2),
+                  trailing: Icon(option.$3, color: AppTheme.primary),
+                  onTap: () => Navigator.pop(sheetContext, option.$1),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _sortMode = selected;
+        _destinations = _sortResults(_destinations);
+      });
+    }
   }
 }

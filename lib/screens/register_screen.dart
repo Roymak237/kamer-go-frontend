@@ -4,6 +4,7 @@ import "package:provider/provider.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/auth_widgets.dart";
+import "../widgets/travel_preference_selector.dart";
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _prefsController = TextEditingController();
+  final Set<String> _selectedPreferences = <String>{};
   String? _error;
   bool _loading = false;
   bool _obscurePassword = true;
@@ -25,7 +26,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _prefsController.dispose();
     super.dispose();
   }
 
@@ -38,11 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _loading = true;
     });
 
-    final preferences = _prefsController.text
-        .split(",")
-        .map((entry) => entry.trim().toLowerCase())
-        .where((entry) => entry.isNotEmpty)
-        .toList();
+    final preferences = _selectedPreferences.toList();
 
     try {
       await context.read<AuthProvider>().register(
@@ -157,22 +153,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return "Choose a password";
                       }
-                      if (value.length < 6) {
-                        return "Use at least 6 characters";
+                      if (value.length < 8) {
+                        return "Use at least 8 characters";
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _prefsController,
-                    textInputAction: TextInputAction.done,
-                    decoration: const InputDecoration(
-                      labelText: "What are you drawn to?",
-                      hintText: "beach, food, culture",
-                      prefixIcon: Icon(Icons.auto_awesome_outlined),
-                      helperText: "Add a few comma-separated interests",
-                    ),
+                  const SizedBox(height: 24),
+                  TravelPreferenceSelector(
+                    selected: _selectedPreferences,
+                    onToggle: (preference) {
+                      setState(() {
+                        if (_selectedPreferences.contains(preference)) {
+                          _selectedPreferences.remove(preference);
+                        } else {
+                          _selectedPreferences.add(preference);
+                        }
+                      });
+                    },
                   ),
                   const SizedBox(height: 22),
                   SizedBox(

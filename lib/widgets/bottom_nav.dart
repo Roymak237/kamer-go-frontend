@@ -23,7 +23,7 @@ class BottomNav extends StatelessWidget {
       activeIcon: Icons.favorite_rounded,
       label: "For You"
     ),
-    (icon: Icons.map_outlined, activeIcon: Icons.map_rounded, label: "Trips"),
+    (icon: Icons.map_outlined, activeIcon: Icons.map_rounded, label: "Map"),
     (
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,

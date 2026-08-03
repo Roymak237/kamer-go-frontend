@@ -5,6 +5,7 @@ import "../models/itinerary.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/itinerary_card.dart";
+import "../widgets/share_itinerary_dialog.dart";
 import "../widgets/state_views.dart";
 
 class ItinerariesScreen extends StatefulWidget {
@@ -129,18 +130,26 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
                               final itinerary = _itineraries[index];
                               return ItineraryCard(
                                 itinerary: itinerary,
-                                onTap: () => Navigator.pushNamed(
-                                  context,
-                                  "/itinerary_detail",
-                                  arguments: itinerary,
-                                ),
-                                onShare: () async {
-                                  final username = await _showShareDialog(
+                                onTap: () async {
+                                  final changed = await Navigator.pushNamed(
                                     context,
-                                    itinerary.id,
+                                    "/itinerary_detail",
+                                    arguments: itinerary,
+                                  );
+                                  if (mounted && changed == true) {
+                                    _loadItineraries();
+                                  }
+                                },
+                                onShare: () async {
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
+                                  final username =
+                                      await showShareItineraryDialog(
+                                    context,
+                                    itineraryId: itinerary.id,
                                   );
                                   if (!mounted || username == null) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  messenger.showSnackBar(
                                     SnackBar(
                                         content: Text("Shared with $username")),
                                   );
@@ -151,57 +160,6 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
                         ),
         ),
       ],
-    );
-  }
-
-  Future<String?> _showShareDialog(BuildContext context, String itineraryId) {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          "Share this trip",
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: AppTheme.displayFontFamily,
-              ),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            labelText: "Username to share with",
-            prefixIcon: Icon(Icons.person_add_alt_1_outlined),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final username = controller.text.trim();
-              if (username.isNotEmpty) {
-                try {
-                  await context.read<AuthProvider>().shareItinerary(
-                        itineraryId: itineraryId,
-                        sharedWith: username,
-                      );
-                  if (context.mounted) Navigator.pop(context, username);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Error: $e")),
-                    );
-                  }
-                }
-              }
-            },
-            child: const Text("Share"),
-          ),
-        ],
-      ),
     );
   }
 }

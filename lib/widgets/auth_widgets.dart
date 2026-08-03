@@ -22,7 +22,7 @@ class AuthBackdrop extends StatelessWidget {
               child: IgnorePointer(
                 child: Transform.rotate(
                   angle: -0.07,
-                  child: _TravelImagePanel(
+                  child: const _TravelImagePanel(
                     width: 500,
                     height: 300,
                   ),
@@ -35,7 +35,7 @@ class AuthBackdrop extends StatelessWidget {
               child: IgnorePointer(
                 child: Transform.rotate(
                   angle: 0.06,
-                  child: _TravelImagePanel(
+                  child: const _TravelImagePanel(
                     width: 360,
                     height: 220,
                     opacity: 0.1,
