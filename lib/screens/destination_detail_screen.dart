@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../utils/theme.dart";
 import "../widgets/destination_image.dart";
@@ -11,6 +12,7 @@ class DestinationDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     final destination =
         ModalRoute.of(context)!.settings.arguments as Destination;
     final cost =
@@ -116,7 +118,7 @@ class DestinationDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "On the map",
+                              localizations.onTheMap,
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineSmall
@@ -126,7 +128,7 @@ class DestinationDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "A starting point for your field notes.",
+                              localizations.mapStartingPoint,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -161,7 +163,7 @@ class DestinationDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 26),
                   Text(
-                    "Why go",
+                    localizations.whyGo,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontFamily: AppTheme.displayFontFamily,
                         ),
@@ -177,7 +179,7 @@ class DestinationDetailScreen extends StatelessWidget {
                   if (destination.highlights.isNotEmpty) ...[
                     const SizedBox(height: 26),
                     Text(
-                      "Field notes",
+                      localizations.fieldNotes,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontFamily: AppTheme.displayFontFamily,
@@ -235,7 +237,7 @@ class DestinationDetailScreen extends StatelessWidget {
                   ],
                   const SizedBox(height: 18),
                   Text(
-                    "Save this place to keep it close while you shape your next trip.",
+                    localizations.savePlaceMessage,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary,

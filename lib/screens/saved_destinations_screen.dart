@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../providers/favorites_provider.dart";
 import "../services/api_service.dart";
@@ -9,7 +10,14 @@ import "../widgets/destination_card.dart";
 import "../widgets/state_views.dart";
 
 class SavedDestinationsScreen extends StatefulWidget {
-  const SavedDestinationsScreen({super.key});
+  final bool showScaffold;
+  final VoidCallback? onExplore;
+
+  const SavedDestinationsScreen({
+    super.key,
+    this.showScaffold = true,
+    this.onExplore,
+  });
 
   @override
   State<SavedDestinationsScreen> createState() =>
@@ -57,61 +65,71 @@ class _SavedDestinationsScreenState extends State<SavedDestinationsScreen> {
     }
   }
 
+  Widget _buildContent(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
+    return _loading
+        ? AppLoadingView(message: localizations.savedLoading)
+        : _error != null
+            ? ErrorStateView(
+                title: localizations.savedErrorTitle,
+                message: _error!,
+                onRetry: _loadSaved,
+              )
+            : _destinations.isEmpty
+                ? EmptyStateView(
+                    icon: Icons.favorite_border_rounded,
+                    title: localizations.savedEmptyTitle,
+                    message: localizations.savedEmptyMessage,
+                    action: ElevatedButton.icon(
+                      onPressed:
+                          widget.onExplore ?? () => Navigator.pop(context),
+                      icon: const Icon(Icons.explore_rounded),
+                      label: Text(localizations.exploreDestinations),
+                    ),
+                  )
+                : RefreshIndicator(
+                    color: AppTheme.primary,
+                    onRefresh: _loadSaved,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 8, bottom: 24),
+                      itemCount: _destinations.length,
+                      itemBuilder: (context, index) {
+                        final destination = _destinations[index];
+                        return DestinationCard(
+                          destination: destination,
+                          onTap: () async {
+                            await Navigator.pushNamed(
+                              context,
+                              "/destination_detail",
+                              arguments: destination,
+                            );
+                            _loadSaved();
+                          },
+                        );
+                      },
+                    ),
+                  );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final content = _buildContent(context);
+    if (!widget.showScaffold) return content;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Saved places"),
+        title: Text(localizations.favoritesTitle),
         actions: [
           IconButton(
-            tooltip: "Refresh saved places",
+            tooltip: localizations.refreshSavedPlaces,
             onPressed: _loadSaved,
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
-      body: _loading
-          ? const AppLoadingView(message: "Gathering your saved places…")
-          : _error != null
-              ? ErrorStateView(
-                  title: "Your saved map went quiet.",
-                  message: _error!,
-                  onRetry: _loadSaved,
-                )
-              : _destinations.isEmpty
-                  ? EmptyStateView(
-                      icon: Icons.favorite_border_rounded,
-                      title: "Keep a few places close.",
-                      message:
-                          "Tap the heart on any destination to build your own shortlist.",
-                      action: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.explore_rounded),
-                        label: const Text("Explore destinations"),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: AppTheme.primary,
-                      onRefresh: _loadSaved,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(top: 8, bottom: 24),
-                        itemCount: _destinations.length,
-                        itemBuilder: (context, index) {
-                          final destination = _destinations[index];
-                          return DestinationCard(
-                            destination: destination,
-                            onTap: () async {
-                              await Navigator.pushNamed(
-                                context,
-                                "/destination_detail",
-                                arguments: destination,
-                              );
-                              _loadSaved();
-                            },
-                          );
-                        },
-                      ),
-                    ),
+      body: content,
     );
   }
 }

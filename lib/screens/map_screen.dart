@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
-import "package:flutter_map/flutter_map.dart";
 import "package:geolocator/geolocator.dart";
-import "package:latlong2/latlong.dart";
+import "package:google_maps_flutter/google_maps_flutter.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../services/api_service.dart";
 import "../utils/theme.dart";
@@ -24,7 +24,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final _api = ApiService();
-  final _mapController = MapController();
+  GoogleMapController? _mapController;
   List<Destination> _destinations = [];
   Destination? _selectedDestination;
   LatLng? _currentLocation;
@@ -73,6 +73,20 @@ class _MapScreenState extends State<MapScreen> {
 
   void _selectDestination(Destination destination) {
     setState(() => _selectedDestination = destination);
+    final location = destination.hasCoordinates
+        ? LatLng(destination.latitude!, destination.longitude!)
+        : null;
+    if (location != null) {
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(location, 14.5));
+    }
+  }
+
+  void _handleMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    final location = _currentLocation;
+    if (location != null) {
+      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 15));
+    }
   }
 
   Future<void> _recenterToCurrentLocation() async {
@@ -106,15 +120,11 @@ class _MapScreenState extends State<MapScreen> {
       final location = LatLng(position.latitude, position.longitude);
       if (!mounted) return;
       setState(() => _currentLocation = location);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        try {
-          _mapController.move(location, 15);
-        } catch (_) {
-          // The map may not have finished mounting yet; the marker is still
-          // retained and the next press can recenter once it is ready.
-        }
-      });
+      final controller = _mapController;
+      if (controller != null) {
+        await controller
+            .animateCamera(CameraUpdate.newLatLngZoom(location, 15));
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -130,6 +140,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     if (!widget.isActive) return const SizedBox.expand();
 
     return Column(
@@ -145,7 +156,7 @@ class _MapScreenState extends State<MapScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "THE CAMEROON MAP",
+                      localizations.brand,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: AppTheme.secondary,
                             fontWeight: FontWeight.w800,
@@ -154,7 +165,7 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Plan by place",
+                      localizations.mapHeading,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontFamily: AppTheme.displayFontFamily,
@@ -167,17 +178,17 @@ class _MapScreenState extends State<MapScreen> {
               TextButton.icon(
                 onPressed: () => Navigator.pushNamed(context, "/itineraries"),
                 icon: const Icon(Icons.route_rounded, size: 18),
-                label: const Text("My trips"),
+                label: Text(localizations.myTrips),
               ),
             ],
           ),
         ),
         Expanded(
           child: _loading
-              ? const AppLoadingView(message: "Unfolding the map…")
+              ? AppLoadingView(message: localizations.mapLoading)
               : _error != null
                   ? ErrorStateView(
-                      title: "The map lost its trail.",
+                      title: localizations.mapErrorTitle,
                       message: _error!,
                       onRetry: _loadDestinations,
                     )
@@ -188,15 +199,16 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildMap(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     final mappedDestinations = _destinations
         .where((destination) => destination.hasCoordinates)
         .toList();
 
     if (mappedDestinations.isEmpty) {
-      return const EmptyStateView(
+      return EmptyStateView(
         icon: Icons.location_off_outlined,
-        title: "No mapped places yet.",
-        message: "Add coordinates to destinations to bring them onto the map.",
+        title: localizations.noMappedPlaces,
+        message: localizations.noMappedPlacesMessage,
       );
     }
 
@@ -211,7 +223,7 @@ class _MapScreenState extends State<MapScreen> {
               destinations: mappedDestinations,
               selectedDestination: _selectedDestination,
               currentLocation: _currentLocation,
-              mapController: _mapController,
+              onMapCreated: _handleMapCreated,
               onDestinationSelected: _selectDestination,
             ),
           ),
@@ -219,15 +231,18 @@ class _MapScreenState extends State<MapScreen> {
         Positioned(
           top: 14,
           left: 28,
-          child: _MapCountPill(count: mappedDestinations.length),
+          child: interceptMapOverlay(
+              _MapCountPill(count: mappedDestinations.length)),
         ),
         Positioned(
           top: 14,
           right: 28,
-          child: MapActionButton(
-            locating: _locating,
-            hasCurrentLocation: _currentLocation != null,
-            onPressed: _recenterToCurrentLocation,
+          child: interceptMapOverlay(
+            MapActionButton(
+              locating: _locating,
+              hasCurrentLocation: _currentLocation != null,
+              onPressed: _recenterToCurrentLocation,
+            ),
           ),
         ),
         if (_selectedDestination != null)
@@ -235,12 +250,14 @@ class _MapScreenState extends State<MapScreen> {
             left: 28,
             right: 28,
             bottom: 18,
-            child: _SelectedDestinationCard(
-              destination: _selectedDestination!,
-              onOpen: () => Navigator.pushNamed(
-                context,
-                "/destination_detail",
-                arguments: _selectedDestination,
+            child: interceptMapOverlay(
+              _SelectedDestinationCard(
+                destination: _selectedDestination!,
+                onOpen: () => Navigator.pushNamed(
+                  context,
+                  "/destination_detail",
+                  arguments: _selectedDestination,
+                ),
               ),
             ),
           ),

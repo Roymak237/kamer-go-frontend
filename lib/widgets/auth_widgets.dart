@@ -1,11 +1,24 @@
 import "dart:ui";
-
 import "package:flutter/material.dart";
 
+import "../localization/app_localizations.dart";
 import "../utils/theme.dart";
+import "asset_slideshow.dart";
+import "language_switcher.dart";
 
 class AuthBackdrop extends StatelessWidget {
   final Widget child;
+
+  static const _backgroundAssets = [
+    "assets/images/travel-collage-login.jpeg",
+    "assets/images/reunification monument.avif",
+    "assets/images/city council.webp",
+    "assets/images/i love my country cameroon monument.webp",
+    "assets/images/mokolo market.webp",
+    "assets/images/parcour vita playground.png",
+    "assets/images/africa deployments.webp",
+    "assets/images/waza park.webp",
+  ];
 
   const AuthBackdrop({super.key, required this.child});
 
@@ -13,37 +26,20 @@ class AuthBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(color: AppTheme.background),
+        decoration: const BoxDecoration(color: Color(0xFF00140C)),
         child: Stack(
           children: [
-            Positioned(
-              top: 42,
-              right: -96,
+            const Positioned.fill(
               child: IgnorePointer(
-                child: Transform.rotate(
-                  angle: -0.07,
-                  child: const _TravelImagePanel(
-                    width: 500,
-                    height: 300,
-                  ),
+                child: AssetSlideshow(
+                  assetPaths: _backgroundAssets,
+                  opacity: 0.75,
+                  frameInterval: Duration(seconds: 6),
+                  transitionDuration: Duration(milliseconds: 1000),
                 ),
               ),
             ),
-            Positioned(
-              left: -110,
-              bottom: 12,
-              child: IgnorePointer(
-                child: Transform.rotate(
-                  angle: 0.06,
-                  child: const _TravelImagePanel(
-                    width: 360,
-                    height: 220,
-                    opacity: 0.1,
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
+            const Positioned.fill(
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -51,10 +47,10 @@ class AuthBackdrop extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppTheme.background.withValues(alpha: 0.4),
-                        AppTheme.background.withValues(alpha: 0.94),
+                        Color(0x7300190F),
+                        Color(0xD100140C),
                       ],
-                      stops: const [0, 0.72],
+                      stops: [0, 0.75],
                     ),
                   ),
                 ),
@@ -63,64 +59,28 @@ class AuthBackdrop extends StatelessWidget {
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 520),
-                        child: child,
+                  return Stack(
+                    children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 450),
+                            child: child,
+                          ),
+                        ),
                       ),
-                    ),
+                      const Positioned(
+                        top: 8,
+                        right: 20,
+                        child: LanguageSwitcher(),
+                      ),
+                    ],
                   );
                 },
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TravelImagePanel extends StatelessWidget {
-  final double width;
-  final double height;
-  final double opacity;
-
-  const _TravelImagePanel({
-    required this.width,
-    required this.height,
-    this.opacity = 0.16,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(44),
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Image.asset(
-                  "assets/images/travel-collage-login.jpeg",
-                  fit: BoxFit.cover,
-                  semanticLabel:
-                      "Travel collage with landmarks and an airplane",
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.36),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -134,21 +94,27 @@ class AuthFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
-      decoration: BoxDecoration(
-        color: AppTheme.surface.withValues(alpha: 0.97),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(color: AppTheme.surface),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryDark.withValues(alpha: 0.1),
-            blurRadius: 34,
-            offset: const Offset(0, 18),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+            ],
           ),
-        ],
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 }
@@ -169,6 +135,7 @@ class AuthIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,7 +152,7 @@ class AuthIntro extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              "GLOBETROTTER / CAMEROON",
+              localizations.brand,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppTheme.primary,
                     fontWeight: FontWeight.w800,

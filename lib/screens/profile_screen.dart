@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/user.dart";
 import "../providers/auth_provider.dart";
 import "../utils/preferences.dart";
@@ -409,7 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!widget.showScaffold) return content;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).profileTitle)),
       body: content,
     );
   }

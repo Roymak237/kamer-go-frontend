@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/itinerary.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
@@ -51,6 +52,7 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -64,7 +66,7 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Your journeys",
+                      localizations.itineraryHeading,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontFamily: AppTheme.displayFontFamily,
@@ -72,7 +74,7 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Keep the good ideas in one place.",
+                      localizations.itinerarySubtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondary,
                           ),
@@ -97,19 +99,18 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
         ),
         Expanded(
           child: _loading
-              ? const AppLoadingView(message: "Gathering your routes…")
+              ? AppLoadingView(message: localizations.itineraryLoading)
               : _error != null
                   ? ErrorStateView(
-                      title: "Your map went quiet.",
+                      title: localizations.itineraryErrorTitle,
                       message: _error!,
                       onRetry: _loadItineraries,
                     )
                   : _itineraries.isEmpty
                       ? EmptyStateView(
                           icon: Icons.map_outlined,
-                          title: "Your first trip is still unwritten.",
-                          message:
-                              "Save the places you love, then turn them into a route with room for detours.",
+                          title: localizations.itineraryEmptyTitle,
+                          message: localizations.itineraryEmptyMessage,
                           action: ElevatedButton.icon(
                             onPressed: () async {
                               await Navigator.pushNamed(
@@ -117,7 +118,7 @@ class _ItinerariesScreenState extends State<ItinerariesScreen> {
                               _loadItineraries();
                             },
                             icon: const Icon(Icons.add_rounded),
-                            label: const Text("Plan a new trip"),
+                            label: Text(localizations.planNewTrip),
                           ),
                         )
                       : RefreshIndicator(

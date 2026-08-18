@@ -1,13 +1,18 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/bottom_nav.dart";
+import "../widgets/home_backdrop.dart";
+import "../widgets/language_switcher.dart";
 import "destinations_screen.dart";
+import "itineraries_screen.dart";
 import "map_screen.dart";
 import "profile_screen.dart";
 import "recommendations_screen.dart";
+import "saved_destinations_screen.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
+    final localizations = AppLocalizations.of(context);
     final greetingName = user?.displayName.isNotEmpty == true
         ? user!.displayName
         : user?.username.isNotEmpty == true
@@ -30,7 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final pages = [
       const DestinationsScreen(),
       const RecommendationsScreen(),
-      MapScreen(isActive: _currentIndex == 2),
+      SavedDestinationsScreen(
+        showScaffold: false,
+        onExplore: () => setState(() => _currentIndex = 0),
+      ),
+      MapScreen(isActive: _currentIndex == 3),
+      const ItinerariesScreen(),
       const ProfileScreen(showScaffold: false),
     ];
 
@@ -53,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          "GLOBETROTTER / CAMEROON",
+                          localizations.brand,
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: AppTheme.secondary,
@@ -63,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          "Hello, $greetingName",
+                          localizations.hello(greetingName),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
@@ -77,26 +88,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(
-                      Icons.travel_explore_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
+                  const LanguageSwitcher(),
                 ],
               ),
             ),
           ),
         ),
       ),
-      body: IndexedStack(index: _currentIndex, children: pages),
+      body: HomeBackdrop(
+        child: IndexedStack(index: _currentIndex, children: pages),
+      ),
       bottomNavigationBar: BottomNav(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

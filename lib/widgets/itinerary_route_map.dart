@@ -1,12 +1,14 @@
 import "package:flutter/material.dart";
-import "package:latlong2/latlong.dart";
+import "package:google_maps_flutter/google_maps_flutter.dart";
 
 import "../models/destination.dart";
+import "../models/road_route.dart";
 import "../services/api_service.dart";
+import "../services/routing_service.dart";
 import "../utils/theme.dart";
 import "destination_map.dart";
 
-class ItineraryRouteMap extends StatelessWidget {
+class ItineraryRouteMap extends StatefulWidget {
   final List<String> destinationNames;
   final List<Destination>? destinations;
   final double height;
@@ -19,30 +21,65 @@ class ItineraryRouteMap extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (destinations != null) {
-      return _buildCard(context, _orderedDestinations(destinations!));
+  State<ItineraryRouteMap> createState() => _ItineraryRouteMapState();
+}
+
+class _ItineraryRouteMapState extends State<ItineraryRouteMap> {
+  final _routingService = RoutingService();
+  Future<List<Destination>>? _destinationsFuture;
+  Future<RoadRoute>? _roadRouteFuture;
+  String _routeKey = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _routeKey = _routeIdentity(widget.destinationNames);
+  }
+
+  @override
+  void didUpdateWidget(covariant ItineraryRouteMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextKey = _routeIdentity(widget.destinationNames);
+    if (nextKey == _routeKey && oldWidget.destinations == widget.destinations) {
+      return;
     }
 
+    _routeKey = nextKey;
+    _destinationsFuture = null;
+    _roadRouteFuture = null;
+  }
+
+  String _routeIdentity(List<String> names) => names.join("\u0000");
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.destinations != null) {
+      return _buildForDestinations(
+        context,
+        _orderedDestinations(widget.destinations!),
+      );
+    }
+
+    _destinationsFuture ??= ApiService().searchDestinations();
     return FutureBuilder<List<Destination>>(
-      future: ApiService().searchDestinations(),
+      future: _destinationsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _MapMessage(
-            height: height,
+            height: widget.height,
             icon: Icons.route_rounded,
-            message: "Drawing your pathway…",
+            message: "Opening the destination guide…",
             loading: true,
           );
         }
         if (snapshot.hasError) {
           return _MapMessage(
-            height: height,
+            height: widget.height,
             icon: Icons.map_outlined,
             message: "The route map is unavailable right now.",
           );
         }
-        return _buildCard(
+        return _buildForDestinations(
           context,
           _orderedDestinations(snapshot.data ?? const <Destination>[]),
         );
@@ -54,20 +91,67 @@ class ItineraryRouteMap extends StatelessWidget {
     final byName = <String, Destination>{
       for (final destination in available) destination.name: destination,
     };
-    return destinationNames
+    return widget.destinationNames
         .map((name) => byName[name])
         .whereType<Destination>()
         .where((destination) => destination.hasCoordinates)
         .toList();
   }
 
-  Widget _buildCard(BuildContext context, List<Destination> route) {
-    final points = route
-        .map((destination) => LatLng(
-              destination.latitude!,
-              destination.longitude!,
-            ))
+  Widget _buildForDestinations(
+    BuildContext context,
+    List<Destination> route,
+  ) {
+    final waypoints = route
+        .map(
+          (destination) => LatLng(
+            destination.latitude!,
+            destination.longitude!,
+          ),
+        )
         .toList();
+
+    if (waypoints.length < 2) {
+      return _buildCard(
+        context,
+        route: route,
+        routePoints: waypoints,
+        roadRoute: null,
+        isLoading: false,
+        isFallback: false,
+      );
+    }
+
+    _roadRouteFuture ??= _routingService.fetchDrivingRoute(waypoints);
+    return FutureBuilder<RoadRoute>(
+      future: _roadRouteFuture,
+      builder: (context, snapshot) {
+        final roadRoute = snapshot.data;
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        final isFallback = snapshot.hasError;
+
+        return _buildCard(
+          context,
+          route: route,
+          routePoints: roadRoute?.geometry ?? waypoints,
+          roadRoute: roadRoute,
+          isLoading: isLoading,
+          isFallback: isFallback,
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context, {
+    required List<Destination> route,
+    required List<LatLng> routePoints,
+    required RoadRoute? roadRoute,
+    required bool isLoading,
+    required bool isFallback,
+  }) {
+    final hasRoadRoute = roadRoute != null;
+    final canRoute = routePoints.length > 1;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
@@ -81,12 +165,15 @@ class ItineraryRouteMap extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.alt_route_rounded,
-                  color: AppTheme.primary, size: 19),
+              const Icon(
+                Icons.alt_route_rounded,
+                color: AppTheme.primary,
+                size: 19,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "MAPPED PATHWAY",
+                  "ROAD PATHWAY",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AppTheme.secondary,
                         fontWeight: FontWeight.w800,
@@ -107,19 +194,29 @@ class ItineraryRouteMap extends StatelessWidget {
           Text(
             route.length < 2
                 ? "Add another mapped stop to draw the route between places."
-                : "The line follows the order of your selected stops.",
+                : hasRoadRoute
+                    ? "The line follows drivable roads in your selected order."
+                    : "The line follows the order of your selected stops.",
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondary,
                   height: 1.35,
                 ),
           ),
+          if (canRoute) ...[
+            const SizedBox(height: 10),
+            _RouteStatus(
+              roadRoute: roadRoute,
+              isLoading: isLoading,
+              isFallback: isFallback,
+            ),
+          ],
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: DestinationMap(
               destinations: route,
-              routePoints: points,
-              height: height,
+              routePoints: routePoints,
+              height: widget.height,
               compact: true,
             ),
           ),
@@ -127,6 +224,86 @@ class ItineraryRouteMap extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RouteStatus extends StatelessWidget {
+  final RoadRoute? roadRoute;
+  final bool isLoading;
+  final bool isFallback;
+
+  const _RouteStatus({
+    required this.roadRoute,
+    required this.isLoading,
+    required this.isFallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final IconData icon;
+    final String message;
+
+    if (isLoading) {
+      color = AppTheme.primary;
+      icon = Icons.sync_rounded;
+      message = "Finding a road route…";
+    } else if (roadRoute != null) {
+      color = AppTheme.primaryDark;
+      icon = Icons.check_circle_outline_rounded;
+      message =
+          "${_formatDistance(roadRoute!.distanceMeters)}  •  ${_formatDuration(roadRoute!.durationSeconds)} driving";
+    } else if (isFallback) {
+      color = AppTheme.textSecondary;
+      icon = Icons.info_outline_rounded;
+      message = "Road routing is unavailable; showing the direct pathway.";
+    } else {
+      color = AppTheme.textSecondary;
+      icon = Icons.route_outlined;
+      message = "Select two or more mapped stops to calculate roads.";
+    }
+
+    return Row(
+      children: [
+        if (isLoading)
+          const SizedBox(
+            width: 15,
+            height: 15,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else
+          Icon(icon, color: color, size: 16),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            message,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _formatDistance(double meters) {
+  if (meters < 1000) return "${meters.round()} m";
+  final kilometers = meters / 1000;
+  if (kilometers < 100) return "${kilometers.toStringAsFixed(1)} km";
+  return "${kilometers.round()} km";
+}
+
+String _formatDuration(double seconds) {
+  final minutes = (seconds / 60).round();
+  if (minutes < 60) return "~$minutes min";
+  final hours = minutes ~/ 60;
+  final remainingMinutes = minutes % 60;
+  if (remainingMinutes == 0) return "~${hours}h";
+  return "~${hours}h ${remainingMinutes}m";
 }
 
 class _MapMessage extends StatelessWidget {

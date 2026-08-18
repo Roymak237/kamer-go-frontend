@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/auth_widgets.dart";
@@ -62,6 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return AuthBackdrop(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,16 +73,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Row(
               children: [
                 IconButton(
-                  tooltip: "Back to login",
+                  tooltip: localizations.backToLogin,
                   onPressed: _loading ? null : () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppTheme.primaryDark,
+                  color: Colors.white,
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  "Start with a better map.",
+                  localizations.registerTopline,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.primaryDark,
+                        color: Colors.white,
                         fontFamily: AppTheme.displayFontFamily,
                         height: 1.25,
                       ),
@@ -94,11 +96,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthIntro(
-                    eyebrow: "CREATE YOUR ACCOUNT",
-                    title: "Make room for more detours.",
-                    subtitle:
-                        "Save places that spark something, then turn them into a trip that feels like yours.",
+                  AuthIntro(
+                    eyebrow: localizations.registerEyebrow,
+                    title: localizations.registerTitle,
+                    subtitle: localizations.registerSubtitle,
                     icon: Icons.map_rounded,
                   ),
                   const SizedBox(height: 28),
@@ -110,17 +111,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _usernameController,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.username],
-                    decoration: const InputDecoration(
-                      labelText: "Username",
-                      hintText: "What should we call you?",
-                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    decoration: InputDecoration(
+                      labelText: localizations.username,
+                      hintText: localizations.registerUsernameHint,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "Choose a username";
+                        return localizations.chooseUsername;
                       }
                       if (value.trim().length < 3) {
-                        return "Use at least 3 characters";
+                        return localizations.useAtLeastThreeCharacters;
                       }
                       return null;
                     },
@@ -132,13 +133,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.newPassword],
                     decoration: InputDecoration(
-                      labelText: "Password",
-                      hintText: "Keep it memorable and private",
+                      labelText: localizations.password,
+                      hintText: localizations.newPasswordHint,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         tooltip: _obscurePassword
-                            ? "Show password"
-                            : "Hide password",
+                            ? localizations.showPassword
+                            : localizations.hidePassword,
                         onPressed: () => setState(
                           () => _obscurePassword = !_obscurePassword,
                         ),
@@ -151,10 +152,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Choose a password";
+                        return localizations.choosePassword;
                       }
                       if (value.length < 8) {
-                        return "Use at least 8 characters";
+                        return localizations.useAtLeastEightCharacters;
                       }
                       return null;
                     },
@@ -188,16 +189,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             )
                           : const Icon(Icons.auto_awesome_rounded, size: 20),
                       label: Text(_loading
-                          ? "Creating your account…"
-                          : "Create account"),
+                          ? localizations.creatingAccount
+                          : localizations.createAccount),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const AuthDivider(label: "ALREADY HAVE AN ACCOUNT?"),
+                  AuthDivider(label: localizations.alreadyHaveAccount),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: _loading ? null : () => Navigator.pop(context),
-                    child: const Text("Return to sign in"),
+                    child: Text(localizations.returnToSignIn),
                   ),
                 ],
               ),
@@ -205,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            "Create once. Keep exploring at your own pace.",
+            localizations.registerFooter,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondary,

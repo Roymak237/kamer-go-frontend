@@ -9,13 +9,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   http: ^1.1.0
   provider: ^6.0.5
   shared_preferences: ^2.2.1
   cupertino_icons: ^1.0.6
-  flutter_map: ^8.3.1
-  latlong2: ^0.10.1
   geolocator: ^14.0.3
+  google_maps_flutter: ^2.18.0
+  pointer_interceptor: ^0.10.1+2
+  webview_all: ^1.3.6
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +29,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/dining/
+    - assets/images/gaming/
+    - assets/images/leisure/
+    - assets/images/recreational/
+    - assets/images/shopping/
+    - assets/images/tourist/

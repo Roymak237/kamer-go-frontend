@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../providers/auth_provider.dart";
 import "../services/api_service.dart";
@@ -100,6 +101,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
   }
 
   Future<void> _editPreferences() async {
+    final localizations = AppLocalizations.of(context);
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
     if (user == null) return;
@@ -121,22 +123,23 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
     await _loadRecommendations();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Recommendations refreshed")),
+      SnackBar(content: Text(localizations.recommendationsRefreshed)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     final preferences =
         context.watch<AuthProvider>().currentUser?.preferences ?? <String>[];
 
     if (_loading) {
-      return const AppLoadingView(message: "Reading your travel signals…");
+      return AppLoadingView(message: localizations.recommendationsLoading);
     }
 
     if (_error != null) {
       return ErrorStateView(
-        title: "Your compass needs a reset.",
+        title: localizations.recommendationsErrorTitle,
         message: _error!,
         onRetry: _loadRecommendations,
       );
@@ -155,13 +158,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
           if (_recommendations.isEmpty)
             EmptyStateView(
               icon: Icons.auto_awesome_outlined,
-              title: "Your journey awaits.",
-              message:
-                  "Add a few interests to your profile and we’ll shape a more personal path.",
+              title: localizations.journeyAwaits,
+              message: localizations.recommendationsEmptyMessage,
               action: OutlinedButton.icon(
                 onPressed: _editPreferences,
                 icon: const Icon(Icons.tune_rounded),
-                label: const Text("Tune my preferences"),
+                label: Text(localizations.tunePreferences),
               ),
             )
           else
@@ -192,6 +194,7 @@ class _RecommendationsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
       child: Column(
@@ -205,7 +208,7 @@ class _RecommendationsHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "A route shaped for you",
+                      localizations.recommendationsHeading,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontFamily: AppTheme.displayFontFamily,
@@ -214,8 +217,8 @@ class _RecommendationsHeader extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       preferences.isEmpty
-                          ? "Start with a few travel signals."
-                          : "Picked from the things you want to feel more of.",
+                          ? localizations.recommendationsLoading
+                          : localizations.recommendationsSubtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondary,
                           ),
@@ -226,14 +229,14 @@ class _RecommendationsHeader extends StatelessWidget {
               TextButton.icon(
                 onPressed: onEdit,
                 icon: const Icon(Icons.tune_rounded, size: 18),
-                label: const Text("Tune"),
+                label: Text(localizations.editPreferences),
               ),
             ],
           ),
           const SizedBox(height: 11),
           if (preferences.isEmpty)
             Text(
-              "No signals selected yet",
+              localizations.recommendationsNoSignals,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppTheme.secondary,
                     fontWeight: FontWeight.w800,

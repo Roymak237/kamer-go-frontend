@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../services/api_service.dart";
 import "../utils/theme.dart";
@@ -26,6 +27,12 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
 
   static const _typeFilters = [
     {"label": "All", "tag": ""},
+    {"label": "Gaming", "tag": "gaming"},
+    {"label": "Dining", "tag": "dining"},
+    {"label": "Tourist", "tag": "tourist"},
+    {"label": "Leisure", "tag": "leisure"},
+    {"label": "Recreation", "tag": "recreation"},
+    {"label": "Shopping", "tag": "shopping"},
     {"label": "Beach", "tag": "relaxation"},
     {"label": "Hiking", "tag": "hiking"},
     {"label": "Landmarks", "tag": "landmark"},
@@ -118,6 +125,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     final hasAdvancedFilters = _selectedRegion != null || _maxCost != null;
 
     return Column(
@@ -136,7 +144,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Find your next field note",
+                          localizations.destinationsHeading,
                           style: Theme.of(context)
                               .textTheme
                               .headlineSmall
@@ -146,7 +154,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "From quiet coastlines to mountain air, start with a place that pulls you in.",
+                          localizations.destinationsSubtitle,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppTheme.textSecondary,
@@ -160,13 +168,13 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: "Open destination map",
+                        tooltip: localizations.mapShortcut,
                         onPressed: () => Navigator.pushNamed(context, "/map"),
                         icon: const Icon(Icons.map_outlined),
                         color: AppTheme.primary,
                       ),
                       IconButton(
-                        tooltip: "Open saved places",
+                        tooltip: localizations.savedShortcut,
                         onPressed: () => Navigator.pushNamed(context, "/saved"),
                         icon: const Icon(Icons.favorite_border_rounded),
                         color: AppTheme.secondary,
@@ -181,10 +189,10 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _loadDestinations(),
                 decoration: InputDecoration(
-                  hintText: "Search places, regions, or moods",
+                  hintText: localizations.searchPlacesHint,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: IconButton(
-                    tooltip: "Filter by region and budget",
+                    tooltip: localizations.filterTooltip,
                     icon: Icon(
                       hasAdvancedFilters
                           ? Icons.filter_alt_rounded
@@ -202,6 +210,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            physics: const AlwaysScrollableScrollPhysics(),
             children: _typeFilters.map((filter) {
               final tag = filter["tag"] as String;
               final isSelected = (_selectedType ?? "") == tag;
@@ -228,8 +237,8 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
               Expanded(
                 child: Text(
                   _loading
-                      ? "Reading the guide…"
-                      : "${_destinations.length} place${_destinations.length == 1 ? "" : "s"} found",
+                      ? localizations.placesReading
+                      : localizations.placesFound(_destinations.length),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: AppTheme.textSecondary,
                         fontWeight: FontWeight.w700,
@@ -252,16 +261,15 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                 )
               : _error != null
                   ? ErrorStateView(
-                      title: "We lost the trail.",
+                      title: localizations.destinationsErrorTitle,
                       message: _error!,
                       onRetry: _loadDestinations,
                     )
                   : _destinations.isEmpty
-                      ? const EmptyStateView(
+                      ? EmptyStateView(
                           icon: Icons.explore_off_rounded,
-                          title: "No places on this path yet.",
-                          message:
-                              "Try another search or loosen your filters to keep exploring.",
+                          title: localizations.destinationsEmptyTitle,
+                          message: localizations.destinationsEmptyMessage,
                         )
                       : RefreshIndicator(
                           onRefresh: _loadDestinations,

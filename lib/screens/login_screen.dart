@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../providers/auth_provider.dart";
 import "../utils/theme.dart";
 import "../widgets/auth_widgets.dart";
@@ -57,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return AuthBackdrop(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -64,11 +66,18 @@ class _LoginScreenState extends State<LoginScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 6, 4, 18),
             child: Text(
-              "A more personal way to see Cameroon.",
+              localizations.loginTopline,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.primaryDark,
+                    color: Colors.white,
                     fontFamily: AppTheme.displayFontFamily,
                     height: 1.25,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black45,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
             ),
           ),
@@ -78,11 +87,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthIntro(
-                    eyebrow: "WELCOME BACK",
-                    title: "Pick up where your journey left off.",
-                    subtitle:
-                        "Sign in to discover thoughtful routes, local favorites, and trips worth remembering.",
+                  AuthIntro(
+                    eyebrow: localizations.loginEyebrow,
+                    title: localizations.loginTitle,
+                    subtitle: localizations.loginSubtitle,
                     icon: Icons.explore_rounded,
                   ),
                   const SizedBox(height: 28),
@@ -94,14 +102,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _usernameController,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.username],
-                    decoration: const InputDecoration(
-                      labelText: "Username",
-                      hintText: "Your traveller name",
-                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    decoration: InputDecoration(
+                      labelText: localizations.username,
+                      hintText: localizations.usernameHint,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "Enter your username";
+                        return localizations.enterUsername;
                       }
                       return null;
                     },
@@ -114,13 +122,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     autofillHints: const [AutofillHints.password],
                     onFieldSubmitted: (_) => _loading ? null : _submit(),
                     decoration: InputDecoration(
-                      labelText: "Password",
-                      hintText: "Your password",
+                      labelText: localizations.password,
+                      hintText: localizations.passwordHint,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         tooltip: _obscurePassword
-                            ? "Show password"
-                            : "Hide password",
+                            ? localizations.showPassword
+                            : localizations.hidePassword,
                         onPressed: () => setState(
                           () => _obscurePassword = !_obscurePassword,
                         ),
@@ -133,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Enter your password";
+                        return localizations.enterPassword;
                       }
                       return null;
                     },
@@ -153,18 +161,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             )
                           : const Icon(Icons.arrow_forward_rounded, size: 20),
-                      label:
-                          Text(_loading ? "Signing in…" : "Continue exploring"),
+                      label: Text(
+                        _loading
+                            ? localizations.signingIn
+                            : localizations.continueExploring,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const AuthDivider(label: "NEW TO GLOBETROTTER?"),
+                  AuthDivider(label: localizations.newToGlobetrotter),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: _loading
                         ? null
                         : () => Navigator.pushNamed(context, "/register"),
-                    child: const Text("Create your travel account"),
+                    child: Text(localizations.createTravelAccount),
                   ),
                 ],
               ),
@@ -172,10 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            "Your plans stay yours. Your next adventure starts here.",
+            localizations.loginFooter,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: Colors.white70,
                   height: 1.4,
                 ),
           ),
