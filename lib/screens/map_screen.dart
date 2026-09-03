@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:geolocator/geolocator.dart";
-import "package:google_maps_flutter/google_maps_flutter.dart";
+import "package:flutter_map/flutter_map.dart";
+import "package:latlong2/latlong.dart";
 
 import "../localization/app_localizations.dart";
 import "../models/destination.dart";
@@ -24,7 +25,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final _api = ApiService();
-  GoogleMapController? _mapController;
+  MapController? _mapController;
   List<Destination> _destinations = [];
   Destination? _selectedDestination;
   LatLng? _currentLocation;
@@ -77,15 +78,15 @@ class _MapScreenState extends State<MapScreen> {
         ? LatLng(destination.latitude!, destination.longitude!)
         : null;
     if (location != null) {
-      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(location, 14.5));
+      _mapController?.move(location, 14.5);
     }
   }
 
-  void _handleMapCreated(GoogleMapController controller) {
+  void _handleMapCreated(MapController controller) {
     _mapController = controller;
     final location = _currentLocation;
     if (location != null) {
-      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 15));
+      controller.move(location, 15);
     }
   }
 
@@ -122,8 +123,7 @@ class _MapScreenState extends State<MapScreen> {
       setState(() => _currentLocation = location);
       final controller = _mapController;
       if (controller != null) {
-        await controller
-            .animateCamera(CameraUpdate.newLatLngZoom(location, 15));
+        controller.move(location, 15);
       }
     } catch (error) {
       if (mounted) {

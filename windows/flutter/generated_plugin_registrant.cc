@@ -7,7 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <geolocator_windows/geolocator_windows.h>
-#include <webview_all_windows/webview_windows_plugin.h>
+#include <webview_windows/webview_windows_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   GeolocatorWindowsRegisterWithRegistrar(

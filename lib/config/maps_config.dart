@@ -1,15 +1,12 @@
-/// Build-time configuration for the Google Maps surfaces.
+/// Build-time configuration for the map surfaces.
 ///
-/// The web SDK key is intentionally supplied through --dart-define rather than
-/// stored in Dart source. Android and iOS use their native platform key
-/// configuration; see the repository README for the matching setup.
+/// The app uses OpenStreetMap via flutter_map, so no API key is required.
 class MapsConfig {
-  static const webApiKey = String.fromEnvironment("GOOGLE_MAPS_API_KEY");
+  static const webApiKey = "";
 
-  /// Returns true if a Google Maps API key is defined or fallback mode is enabled.
   static bool get isConfigured => true;
 
-  static bool get hasNativeApiKey => webApiKey.trim().isNotEmpty;
+  static bool get hasNativeApiKey => false;
 
   static const configurationTitle = "Interactive Cameroon Map";
   static const configurationMessage =

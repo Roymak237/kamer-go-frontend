@@ -1,3 +1,4 @@
+import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
 import "package:provider/provider.dart";
@@ -34,33 +35,99 @@ class GlobetrotterApp extends StatelessWidget {
         ),
       ],
       child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) => MaterialApp(
-          locale: localeProvider.locale,
-          supportedLocales: localeProvider.supportedLocales,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.theme,
-          initialRoute: "/map",
-          routes: {
-            "/login": (_) => const LoginScreen(),
-            "/register": (_) => const RegisterScreen(),
-            "/saved": (_) => const SavedDestinationsScreen(),
-            "/destination_detail": (_) => const DestinationDetailScreen(),
-            "/home": (_) => const HomeScreen(),
-            "/map": (_) => const MapScreen(),
-            "/itineraries": (_) => const ItinerariesScreen(),
-            "/create_itinerary": (_) => const CreateItineraryScreen(),
-            "/itinerary_detail": (_) => const ItineraryDetailScreen(),
-            "/profile": (_) => const ProfileScreen(),
-          },
-        ),
+        builder: (context, localeProvider, _) {
+          return MaterialApp(
+            locale: localeProvider.locale,
+            supportedLocales: const [
+              Locale("en"),
+              Locale("fr"),
+              Locale("cpe"),
+            ],
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              _SupportedMaterialLocalizationsDelegate(),
+              _SupportedWidgetsLocalizationsDelegate(),
+              _SupportedCupertinoLocalizationsDelegate(),
+            ],
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.theme,
+            initialRoute: "/login",
+            routes: {
+              "/login": (_) => const LoginScreen(),
+              "/register": (_) => const RegisterScreen(),
+              "/saved": (_) => const SavedDestinationsScreen(),
+              "/destination_detail": (_) => const DestinationDetailScreen(),
+              "/home": (_) => const HomeScreen(),
+              "/map": (_) => const MapScreen(),
+              "/itineraries": (_) => const ItinerariesScreen(),
+              "/create_itinerary": (_) => const CreateItineraryScreen(),
+              "/itinerary_detail": (_) => const ItineraryDetailScreen(),
+              "/profile": (_) => const ProfileScreen(),
+            },
+          );
+        },
       ),
     );
   }
+}
+
+class _SupportedMaterialLocalizationsDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
+  const _SupportedMaterialLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<MaterialLocalizations> load(Locale locale) async {
+    final delegate = GlobalMaterialLocalizations.delegate;
+    return delegate.isSupported(locale)
+        ? delegate.load(locale)
+        : delegate.load(const Locale("en"));
+  }
+
+  @override
+  bool shouldReload(covariant LocalizationsDelegate<MaterialLocalizations> old) =>
+      false;
+}
+
+class _SupportedWidgetsLocalizationsDelegate
+    extends LocalizationsDelegate<WidgetsLocalizations> {
+  const _SupportedWidgetsLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<WidgetsLocalizations> load(Locale locale) async {
+    final delegate = GlobalWidgetsLocalizations.delegate;
+    return delegate.isSupported(locale)
+        ? delegate.load(locale)
+        : delegate.load(const Locale("en"));
+  }
+
+  @override
+  bool shouldReload(covariant LocalizationsDelegate<WidgetsLocalizations> old) =>
+      false;
+}
+
+class _SupportedCupertinoLocalizationsDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
+  const _SupportedCupertinoLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) async {
+    final delegate = GlobalCupertinoLocalizations.delegate;
+    return delegate.isSupported(locale)
+        ? delegate.load(locale)
+        : delegate.load(const Locale("en"));
+  }
+
+  @override
+  bool shouldReload(covariant LocalizationsDelegate<CupertinoLocalizations> old) =>
+      false;
 }

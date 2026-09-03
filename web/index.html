@@ -31,20 +31,6 @@
 
   <title>globetrotter</title>
   <link rel="manifest" href="manifest.json">
-
-  <!-- google_maps_api_key.js is ignored and must be created locally. -->
-  <script src="google_maps_api_key.js"></script>
-  <script>
-    (function() {
-      var key = window.googleMapsApiKey || "";
-      if (key) {
-        var script = document.createElement("script");
-        script.src = "https://maps.googleapis.com/maps/api/js?key=" + encodeURIComponent(key);
-        script.async = true;
-        document.head.appendChild(script);
-      }
-    })();
-  </script>
 </head>
 <body>
   <!--
