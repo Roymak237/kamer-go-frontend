@@ -28,7 +28,9 @@ pipeline {
         DOMAIN         = 'kamer-go.duckdns.org'
         APP_PORT       = '6003'
         JENKINS_VOLUME = 'kamergo-ci_jenkins_home'
-        FLUTTER_IMAGE  = 'ghcr.io/cirruslabs/flutter:3.35.5'
+        // Must match the SDK the app is developed against. Older images ship a
+        // Dart version that the dependency tree rejects.
+        FLUTTER_IMAGE  = 'ghcr.io/cirruslabs/flutter:3.41.6'
         PYTHON_IMAGE   = 'python:3.11-slim'
         BACKEND_REPO   = 'https://github.com/Roymak237/backend.git'
         BACKEND_BRANCH = 'shadow'
