@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../services/api_service.dart";
+import "../utils/destination_cost.dart";
 import "../utils/theme.dart";
 import "../widgets/destination_card.dart";
 import "../widgets/state_views.dart";
@@ -33,6 +34,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     {"label": "Leisure", "tag": "leisure"},
     {"label": "Recreation", "tag": "recreation"},
     {"label": "Shopping", "tag": "shopping"},
+    {"label": "Schools", "tag": "education"},
     {"label": "Beach", "tag": "relaxation"},
     {"label": "Hiking", "tag": "hiking"},
     {"label": "Landmarks", "tag": "landmark"},
@@ -96,10 +98,10 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     final sorted = [...destinations];
     switch (_sortMode) {
       case "cost_low":
-        sorted.sort((a, b) => a.avgCostPerDay.compareTo(b.avgCostPerDay));
+        sorted.sort((a, b) => compareDestinationCosts(a, b));
         break;
       case "cost_high":
-        sorted.sort((a, b) => b.avgCostPerDay.compareTo(a.avgCostPerDay));
+        sorted.sort((a, b) => compareDestinationCosts(a, b, descending: true));
         break;
       case "name":
         sorted.sort(
@@ -217,7 +219,10 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
-                  label: Text(filter["label"] as String),
+                  label: Text(tag == "education" &&
+                          localizations.locale.languageCode == "fr"
+                      ? "Écoles"
+                      : filter["label"] as String),
                   selected: isSelected,
                   onSelected: (_) {
                     setState(() {

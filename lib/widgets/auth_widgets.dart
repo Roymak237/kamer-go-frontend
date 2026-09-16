@@ -10,14 +10,13 @@ class AuthBackdrop extends StatelessWidget {
   final Widget child;
 
   static const _backgroundAssets = [
-    "assets/images/travel-collage-login.jpeg",
-    "assets/images/reunification monument.avif",
-    "assets/images/city council.webp",
-    "assets/images/i love my country cameroon monument.webp",
-    "assets/images/mokolo market.webp",
-    "assets/images/parcour vita playground.png",
-    "assets/images/africa deployments.webp",
-    "assets/images/waza park.webp",
+    "assets/images/tourist/reunifiacation monument.jpg",
+    "assets/images/tourist/city council.webp",
+    "assets/images/tourist/i love my country cameroon monument.webp",
+    "assets/images/shopping/mokolo market.webp",
+    "assets/images/tourist/parcour vita playground.png",
+    "assets/images/tourist/africa deployments.webp",
+    "assets/images/recreational/waza park.webp",
   ];
 
   const AuthBackdrop({super.key, required this.child});

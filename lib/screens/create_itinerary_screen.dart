@@ -1,10 +1,12 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 
+import "../localization/app_localizations.dart";
 import "../models/destination.dart";
 import "../models/itinerary.dart";
 import "../providers/auth_provider.dart";
 import "../services/api_service.dart";
+import "../utils/destination_cost.dart";
 import "../utils/theme.dart";
 import "../widgets/itinerary_route_map.dart";
 import "../widgets/state_views.dart";
@@ -42,9 +44,17 @@ class _CreateItineraryScreenState extends State<CreateItineraryScreen> {
 
   double get _estimatedDailyCost => _selectedDestinations.fold(
         0,
-        (total, name) =>
-            total + (_destinationForName(name)?.avgCostPerDay ?? 0),
+        (total, name) {
+          final destination = _destinationForName(name);
+          return total +
+              (destination?.hasCostEstimate == true
+                  ? destination!.avgCostPerDay
+                  : 0);
+        },
       );
+
+  bool get _hasUnknownCosts => _selectedDestinations
+      .any((name) => _destinationForName(name)?.hasCostEstimate != true);
 
   double get _estimatedTotalCost => _estimatedDailyCost * (_tripDays ?? 0);
 
@@ -218,7 +228,6 @@ class _CreateItineraryScreenState extends State<CreateItineraryScreen> {
   }
 
   String _costLabel(double value) {
-    if (value == 0) return "—";
     return "${(value / 1000).round()}k XAF";
   }
 
@@ -376,7 +385,8 @@ class _CreateItineraryScreenState extends State<CreateItineraryScreen> {
                               destination.name,
                             );
                             return FilterChip(
-                              label: Text(destination.name),
+                              label: Text(
+                                  "${destination.name} • ${destinationCostLabel(context, destination, perDay: true)}"),
                               selected: selected,
                               avatar: Icon(
                                 selected
@@ -419,6 +429,7 @@ class _CreateItineraryScreenState extends State<CreateItineraryScreen> {
                           stopCount: _selectedDestinations.length,
                           dailyCost: _estimatedDailyCost,
                           totalCost: _estimatedTotalCost,
+                          hasUnknownCosts: _hasUnknownCosts,
                           costLabel: _costLabel,
                         ),
                         const SizedBox(height: 28),
@@ -573,7 +584,7 @@ class _RouteOrderCard extends StatelessWidget {
                       subtitle: destination == null
                           ? null
                           : Text(
-                              "${destination.region}  •  ${_formatDailyCost(destination.avgCostPerDay)} / day",
+                              "${destination.region}  •  ${destinationCostLabel(context, destination, perDay: true)}",
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -609,9 +620,6 @@ class _RouteOrderCard extends StatelessWidget {
             ),
     );
   }
-
-  static String _formatDailyCost(double value) =>
-      "${(value / 1000).round()}k XAF";
 }
 
 class _RouteNumber extends StatelessWidget {
@@ -645,6 +653,7 @@ class _CostSummaryCard extends StatelessWidget {
   final int stopCount;
   final double dailyCost;
   final double totalCost;
+  final bool hasUnknownCosts;
   final String Function(double value) costLabel;
 
   const _CostSummaryCard({
@@ -652,12 +661,14 @@ class _CostSummaryCard extends StatelessWidget {
     required this.stopCount,
     required this.dailyCost,
     required this.totalCost,
+    required this.hasUnknownCosts,
     required this.costLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasEstimate = days != null && dailyCost > 0;
+    final hasEstimate = days != null && stopCount > 0;
+    final isFrench = AppLocalizations.of(context).locale.languageCode == "fr";
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
       decoration: BoxDecoration(
@@ -710,7 +721,9 @@ class _CostSummaryCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _EstimateMetric(
-                    label: "TOTAL",
+                    label: hasUnknownCosts
+                        ? (isFrench ? "SOUS-TOTAL" : "SUBTOTAL")
+                        : "TOTAL",
                     value: costLabel(totalCost),
                     emphasize: true,
                   ),
@@ -718,6 +731,17 @@ class _CostSummaryCard extends StatelessWidget {
               ],
             ),
           const SizedBox(height: 8),
+          if (hasUnknownCosts) ...[
+            Text(
+              isFrench
+                  ? "Sous-total hors estimations inconnues : le coût de certains arrêts n’est pas disponible."
+                  : "Subtotal excludes unknown estimates: costs for some stops are not available.",
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+          ],
           Text(
             "Estimate uses average destination costs and is meant for planning only.",
             style: Theme.of(context).textTheme.labelSmall?.copyWith(

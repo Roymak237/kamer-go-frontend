@@ -7,9 +7,9 @@ class HomeBackdrop extends StatelessWidget {
   final Widget child;
 
   static const _yaoundeAssets = [
-    "assets/images/reunification monument.avif",
-    "assets/images/city council.webp",
-    "assets/images/i love my country cameroon monument.webp",
+    "assets/images/tourist/reunifiacation monument.jpg",
+    "assets/images/tourist/city council.webp",
+    "assets/images/tourist/i love my country cameroon monument.webp",
   ];
 
   const HomeBackdrop({

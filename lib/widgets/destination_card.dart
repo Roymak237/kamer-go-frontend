@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../models/destination.dart";
+import "../utils/destination_cost.dart";
 import "../utils/theme.dart";
 import "destination_image.dart";
 import "favorite_button.dart";
@@ -18,13 +19,12 @@ class DestinationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tags = destination.tags.take(3).join("  •  ");
-    final cost =
-        "${(destination.avgCostPerDay / 1000).toStringAsFixed(0)}k XAF";
+    final cost = destinationCostLabel(context, destination);
 
     return Semantics(
       button: onTap != null,
       label:
-          "${destination.name}, ${destination.region}, $cost per day${destination.matchScore > 0 ? ", matches ${destination.matchScore} interests" : ""}",
+          "${destination.name}, ${destination.region}, ${destinationCostLabel(context, destination, perDay: true)}${destination.matchScore > 0 ? ", matches ${destination.matchScore} interests" : ""}",
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 7, 16, 7),
         decoration: BoxDecoration(
