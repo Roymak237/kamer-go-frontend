@@ -199,15 +199,23 @@ cd "${APP_DIR}"
 docker compose build
 docker compose up -d
 
+# Jenkins runs in its own network namespace, so the host loopback that
+# publishes ${APP_PORT} is unreachable from here. The container healthcheck
+# is authoritative and is readable through the shared Docker socket.
 ok=0
-for _ in $(seq 1 30); do
-    if curl -fsS "http://127.0.0.1:${APP_PORT}/healthz" >/dev/null 2>&1; then
+for _ in $(seq 1 45); do
+    state=$(docker inspect -f '{{.State.Health.Status}}' globetrotter_backend 2>/dev/null || echo unknown)
+    if [ "${state}" = "healthy" ]; then
         ok=1
         break
     fi
     sleep 2
 done
-[ "${ok}" = "1" ] || { echo "ERROR: the backend never became healthy." >&2; exit 1; }
+if [ "${ok}" != "1" ]; then
+    echo "ERROR: the backend never became healthy (last state: ${state})." >&2
+    docker compose logs --tail 50 backend >&2 || true
+    exit 1
+fi
 
 # Confirms the public route is serving, not just the container.
 curl -fsS -o /dev/null "https://${DOMAIN}/"
