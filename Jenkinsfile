@@ -32,7 +32,7 @@ pipeline {
         // Dart version that the dependency tree rejects.
         FLUTTER_IMAGE  = 'ghcr.io/cirruslabs/flutter:3.41.6'
         PYTHON_IMAGE   = 'python:3.11-slim'
-        BACKEND_REPO   = 'https://github.com/Roymak237/backend.git'
+        BACKEND_REPO   = 'https://github.com/Roymak237/kamer-go-backend.git'
         BACKEND_BRANCH = 'shadow'
     }
 
