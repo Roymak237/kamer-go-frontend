@@ -139,12 +139,13 @@ flutter test
 flutter build web --release --dart-define=BACKEND_BASE_URL=https://${DOMAIN}
 "
 
-# The build ran as root inside the container; hand ownership back so the
-# controller can publish the files.
+# The build ran as root inside the container. Flutter writes outside build/
+# too (.dart_tool, .flutter-plugins, caches), and anything left owned by root
+# blocks both publishing and the workspace cleanup, so reclaim the whole tree.
 docker run --rm \
     -v "${JENKINS_VOLUME}:/var/jenkins_home" \
     "${PYTHON_IMAGE}" \
-    chown -R "$(id -u):$(id -g)" "${WORKSPACE}/build"
+    chown -R "$(id -u):$(id -g)" "${WORKSPACE}"
 
 test -f "${WORKSPACE}/build/web/index.html"
 '''
@@ -239,8 +240,12 @@ cd "${APP_DIR}" && docker compose up -d --build
         }
         always {
             // deleteDir is a core step, so the workspace is still cleaned even
-            // if the optional ws-cleanup plugin is unavailable.
-            deleteDir()
+            // if the optional ws-cleanup plugin is unavailable. Housekeeping
+            // must never decide the outcome of an otherwise good deployment,
+            // so a stubborn leftover file is reported rather than thrown.
+            catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                deleteDir()
+            }
         }
     }
 }
