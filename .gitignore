@@ -47,3 +47,7 @@ app.*.map.json
 # Local Google Maps credentials
 /web/google_maps_api_key.js
 /ios/Flutter/GoogleMaps.local.xcconfig
+
+# Checked out by the deployment pipeline, never committed here.
+/backend/
+
