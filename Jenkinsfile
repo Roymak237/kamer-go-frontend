@@ -236,7 +236,9 @@ cd "${APP_DIR}" && docker compose up -d --build
             sh 'rm -rf "${APP_DIR}/.rollback"'
         }
         always {
-            cleanWs()
+            // deleteDir is a core step, so the workspace is still cleaned even
+            // if the optional ws-cleanup plugin is unavailable.
+            deleteDir()
         }
     }
 }
