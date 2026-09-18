@@ -8,7 +8,7 @@
 
   /* The Flutter build is published under /app/, and Flutter nests declared
      asset folders one level deeper, hence the doubled "assets" segment. */
-  const APP_ASSET_ROOT = "/app/assets/assets/images/";
+  const MEDIA_ROOT = "/media/";
   const MAX_TILES = 12;
 
   /* ---------------------------------------------------------------- nav */
@@ -99,7 +99,7 @@
     if (asset) {
       // Asset filenames contain spaces, so each path segment is encoded
       // individually to keep the separators intact.
-      return APP_ASSET_ROOT + asset.split("/").map(encodeURIComponent).join("/");
+      return MEDIA_ROOT + asset.split("/").map(encodeURIComponent).join("/");
     }
     return destination.image_url || "";
   };

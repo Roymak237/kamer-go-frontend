@@ -209,7 +209,7 @@ if [ -d "${APP_DIR}/backend" ]; then
 fi
 
 mkdir -p "${APP_DIR}/backend/data" "${APP_DIR}/nginx/conf.d" \
-         "${APP_DIR}/site/app" "${APP_DIR}/site/downloads"
+         "${APP_DIR}/site/app" "${APP_DIR}/site/downloads" "${APP_DIR}/site/media"
 
 # --delete stops files removed upstream from lingering in the release.
 rsync -a --delete --exclude '__pycache__' backend/app/ "${APP_DIR}/backend/app/"
@@ -217,9 +217,14 @@ rsync -a --delete --exclude '__pycache__' backend/app/ "${APP_DIR}/backend/app/"
 # The document root is assembled here: landing page at the top level, the
 # Flutter app under app/, release artefacts under downloads/. app/ and
 # downloads/ are excluded from the landing sync so they survive it.
-rsync -a --delete --exclude 'app/' --exclude 'downloads/' \
+rsync -a --delete --exclude 'app/' --exclude 'downloads/' --exclude 'media/' \
     landing/ "${APP_DIR}/site/"
 rsync -a --delete build/web/ "${APP_DIR}/site/app/"
+
+# The Flutter web build writes asset filenames percent-encoded on disk, which
+# makes them unusable from plain HTML. The landing page therefore reads the
+# photo library from media/, synced straight from source with names intact.
+rsync -a --delete assets/images/ "${APP_DIR}/site/media/"
 
 # Published only when the Android stage produced one, so an UNSTABLE build
 # keeps serving the previous APK instead of a broken link.
