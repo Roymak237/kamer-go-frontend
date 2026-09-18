@@ -37,8 +37,10 @@ services:
       - "127.0.0.1:${APP_PORT:-6003}:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      # The compiled Flutter web app. `flutter build web` writes to build/web.
-      - ./frontend/build/web:/usr/share/nginx/html:ro
+      # Assembled document root: the landing page at the top level, the
+      # compiled Flutter app under app/, and release artefacts under
+      # downloads/. The CI publish stage builds this tree.
+      - ./site:/usr/share/nginx/html:ro
     depends_on:
       backend:
         condition: service_started

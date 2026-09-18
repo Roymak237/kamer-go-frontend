@@ -50,7 +50,7 @@ class DestinationDetailScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0xB3002E1D)],
+                        colors: [Colors.transparent, Color(0xC22A1055)],
                         stops: [0.35, 1],
                       ),
                     ),

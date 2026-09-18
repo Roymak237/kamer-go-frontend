@@ -1,22 +1,71 @@
 import "package:flutter/material.dart";
 
 class AppTheme {
-  static const Color primary = Color(0xFF007A4D);
-  static const Color primaryDark = Color(0xFF005C3A);
-  static const Color secondary = Color(0xFFCE1126);
-  static const Color accent = Color(0xFFFCD116);
-  static const Color background = Color(0xFFF7F7F5);
+  // "Ember" brand ramp: a violet base that burns through fuchsia into orange.
+  // Every widget reads its colour from here, so the ramp is the single place
+  // that defines the product's identity.
+  static const Color primary = Color(0xFF7C3AED);
+  static const Color primaryDark = Color(0xFF5B21B6);
+  static const Color secondary = Color(0xFFF97316);
+  static const Color accent = Color(0xFFFBBF24);
+  static const Color background = Color(0xFFF8F7FB);
   static const Color surface = Colors.white;
-  static const Color border = Color(0xFFEAEAEA);
-  static const Color primarySoft = Color(0xFFE4F1EB);
-  static const Color accentSoft = Color(0xFFFFF6CC);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color textPrimary = Color(0xFF1A1A1A);
-  static const Color textSecondary = Color(0xFF666666);
+  static const Color border = Color(0xFFE9E7F0);
+  static const Color primarySoft = Color(0xFFEDE9FE);
+  static const Color accentSoft = Color(0xFFFEF3C7);
+  static const Color error = Color(0xFFDC2626);
+  static const Color textPrimary = Color(0xFF1B1725);
+  static const Color textSecondary = Color(0xFF6B6780);
+
+  /// Midpoint of the ramp. Pulling it out keeps the three-stop gradient from
+  /// reading as a muddy brown where violet meets orange.
+  static const Color ember = Color(0xFFC026D3);
+
+  /// The signature gradient. Used for app bars, primary calls to action and
+  /// any surface that needs to feel like the brand rather than plain chrome.
+  static const LinearGradient brandGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primary, ember, secondary],
+    stops: [0.0, 0.55, 1.0],
+  );
+
+  /// Horizontal variant for wide, short surfaces such as app bars, where a
+  /// diagonal sweep would be clipped to a single muddled band.
+  static const LinearGradient brandGradientHorizontal = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [primaryDark, primary, ember, secondary],
+    stops: [0.0, 0.35, 0.72, 1.0],
+  );
+
+  /// Scrim laid over photography so white text stays legible. Tinted with the
+  /// violet end of the ramp instead of neutral black, which keeps images
+  /// feeling part of the brand rather than washed out.
+  static const LinearGradient photoScrim = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Colors.transparent, Color(0x7A2A1055)],
+  );
+
+  /// Heavier scrim for full-bleed backgrounds behind forms.
+  static const LinearGradient immersiveScrim = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0x731A0B2E), Color(0xD91A0B2E)],
+    stops: [0, 0.75],
+  );
+
+  /// Ready-made gradient fill for `AppBar.flexibleSpace`. `AppBarTheme` cannot
+  /// express a gradient, so screens opt in by passing this widget.
+  static const Widget appBarBackground = DecoratedBox(
+    decoration: BoxDecoration(gradient: brandGradientHorizontal),
+  );
 
   static const double radiusInput = 14;
   static const double radiusCard = 18;
   static const double radiusLarge = 28;
+
 
   // Use broadly available editorial fallbacks without requiring a network font
   // download at runtime. They keep the intended serif/sans contrast on desktop,
@@ -41,13 +90,13 @@ class AppTheme {
         onPrimaryContainer: primaryDark,
         secondary: secondary,
         onSecondary: Colors.white,
-        secondaryContainer: Color(0xFFFFE5E7),
-        onSecondaryContainer: Color(0xFF7B101B),
+        secondaryContainer: Color(0xFFFFEDD5),
+        onSecondaryContainer: Color(0xFF9A3412),
         tertiary: accent,
         onTertiary: textPrimary,
         surface: surface,
         onSurface: textPrimary,
-        surfaceContainerHighest: Color(0xFFF0F0EC),
+        surfaceContainerHighest: Color(0xFFF1EFF7),
         error: error,
         onError: Colors.white,
       ),

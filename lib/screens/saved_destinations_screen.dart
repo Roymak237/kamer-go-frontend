@@ -120,6 +120,7 @@ class _SavedDestinationsScreenState extends State<SavedDestinationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: AppTheme.appBarBackground,
         title: Text(localizations.favoritesTitle),
         actions: [
           IconButton(

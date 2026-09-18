@@ -410,7 +410,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!widget.showScaffold) return content;
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).profileTitle)),
+      appBar: AppBar(
+        flexibleSpace: AppTheme.appBarBackground,
+        title: Text(AppLocalizations.of(context).profileTitle),
+      ),
       body: content,
     );
   }

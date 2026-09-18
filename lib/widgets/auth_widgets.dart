@@ -25,7 +25,7 @@ class AuthBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(color: Color(0xFF00140C)),
+        decoration: const BoxDecoration(color: Color(0xFF1A0B2E)),
         child: Stack(
           children: [
             const Positioned.fill(
@@ -41,17 +41,7 @@ class AuthBackdrop extends StatelessWidget {
             const Positioned.fill(
               child: IgnorePointer(
                 child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0x7300190F),
-                        Color(0xD100140C),
-                      ],
-                      stops: [0, 0.75],
-                    ),
-                  ),
+                  decoration: BoxDecoration(gradient: AppTheme.immersiveScrim),
                 ),
               ),
             ),

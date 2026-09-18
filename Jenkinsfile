@@ -14,7 +14,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         timestamps()
-        timeout(time: 45, unit: 'MINUTES')
+        timeout(time: 75, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '15'))
         skipDefaultCheckout(true)
     }
@@ -136,7 +136,7 @@ flutter --version
 flutter pub get
 flutter analyze --no-fatal-infos
 flutter test
-flutter build web --release --dart-define=BACKEND_BASE_URL=https://${DOMAIN}
+flutter build web --release --base-href /app/ --dart-define=BACKEND_BASE_URL=https://${DOMAIN}
 "
 
 # The build ran as root inside the container. Flutter writes outside build/
@@ -149,6 +149,41 @@ docker run --rm \
 
 test -f "${WORKSPACE}/build/web/index.html"
 '''
+            }
+        }
+
+        stage('Android package') {
+            steps {
+                // The web app is the primary artefact. A broken Android
+                // toolchain should surface as UNSTABLE rather than block a
+                // deployment that is otherwise good.
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh '''#!/usr/bin/env bash
+set -euo pipefail
+
+docker run --rm \
+    -v "${JENKINS_VOLUME}:/var/jenkins_home" \
+    -w "${WORKSPACE}" \
+    -e PUB_CACHE=/var/jenkins_home/.pub-cache \
+    -e GRADLE_USER_HOME=/var/jenkins_home/.gradle \
+    "${FLUTTER_IMAGE}" \
+    bash -c "
+set -euo pipefail
+git config --global --add safe.directory /sdks/flutter
+git config --global --add safe.directory ${WORKSPACE}
+yes | flutter doctor --android-licenses >/dev/null 2>&1 || true
+flutter build apk --release --dart-define=BACKEND_BASE_URL=https://${DOMAIN}
+"
+
+# Gradle and the Android SDK also write as root inside the container.
+docker run --rm \
+    -v "${JENKINS_VOLUME}:/var/jenkins_home" \
+    "${PYTHON_IMAGE}" \
+    chown -R "$(id -u):$(id -g)" "${WORKSPACE}"
+
+test -f "${WORKSPACE}/build/app/outputs/flutter-apk/app-release.apk"
+'''
+                }
             }
         }
 
@@ -166,18 +201,32 @@ rm -rf "${backup}"
 mkdir -p "${backup}"
 
 # Keep the previous release so a failed health check can be reverted.
-if [ -d "${APP_DIR}/frontend/build/web" ]; then
-    cp -a "${APP_DIR}/frontend/build/web" "${backup}/web"
+if [ -d "${APP_DIR}/site" ]; then
+    cp -a "${APP_DIR}/site" "${backup}/site"
 fi
 if [ -d "${APP_DIR}/backend" ]; then
     cp -a "${APP_DIR}/backend" "${backup}/backend"
 fi
 
-mkdir -p "${APP_DIR}/backend/data" "${APP_DIR}/frontend/build" "${APP_DIR}/nginx/conf.d"
+mkdir -p "${APP_DIR}/backend/data" "${APP_DIR}/nginx/conf.d" \
+         "${APP_DIR}/site/app" "${APP_DIR}/site/downloads"
 
 # --delete stops files removed upstream from lingering in the release.
 rsync -a --delete --exclude '__pycache__' backend/app/ "${APP_DIR}/backend/app/"
-rsync -a --delete build/web/ "${APP_DIR}/frontend/build/web/"
+
+# The document root is assembled here: landing page at the top level, the
+# Flutter app under app/, release artefacts under downloads/. app/ and
+# downloads/ are excluded from the landing sync so they survive it.
+rsync -a --delete --exclude 'app/' --exclude 'downloads/' \
+    landing/ "${APP_DIR}/site/"
+rsync -a --delete build/web/ "${APP_DIR}/site/app/"
+
+# Published only when the Android stage produced one, so an UNSTABLE build
+# keeps serving the previous APK instead of a broken link.
+if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+    install -m 0644 build/app/outputs/flutter-apk/app-release.apk \
+        "${APP_DIR}/site/downloads/kamer-go.apk"
+fi
 
 install -m 0644 backend/requirements.txt "${APP_DIR}/backend/requirements.txt"
 install -m 0755 backend/docker-entrypoint.sh "${APP_DIR}/backend/docker-entrypoint.sh"
@@ -217,8 +266,9 @@ if [ "${ok}" != "1" ]; then
     exit 1
 fi
 
-# Confirms the public route is serving, not just the container.
-curl -fsS -o /dev/null "https://${DOMAIN}/"
+# Confirms the public routes are serving, not just the container.
+curl -fsS "https://${DOMAIN}/" | grep -qi 'kamer-go'
+curl -fsS -o /dev/null "https://${DOMAIN}/app/"
 curl -fsS "https://${DOMAIN}/healthz" | grep -q '"status"'
 count=$(curl -fsS "https://${DOMAIN}/api/destinations" | grep -o '"id"' | wc -l)
 [ "${count}" -gt 0 ] || { echo "ERROR: the destination catalogue came back empty." >&2; exit 1; }
@@ -237,13 +287,18 @@ backup="${APP_DIR}/.rollback"
 [ -d "${backup}" ] || exit 0
 
 echo "Deployment failed; restoring the previous release."
-[ -d "${backup}/web" ] && rsync -a --delete "${backup}/web/" "${APP_DIR}/frontend/build/web/"
+[ -d "${backup}/site" ] && rsync -a --delete "${backup}/site/" "${APP_DIR}/site/"
 [ -d "${backup}/backend" ] && rsync -a --delete "${backup}/backend/" "${APP_DIR}/backend/"
 
 cd "${APP_DIR}" && docker compose up -d --build
 '''
         }
         success {
+            sh 'rm -rf "${APP_DIR}/.rollback"'
+        }
+        unstable {
+            // An unstable run still deployed and verified; only an optional
+            // artefact was missing, so the snapshot has served its purpose.
             sh 'rm -rf "${APP_DIR}/.rollback"'
         }
         always {

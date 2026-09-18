@@ -186,13 +186,7 @@ class _DestinationImage extends StatelessWidget {
       children: [
         DestinationImage(destination: destination),
         const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Color(0x66002E1D)],
-            ),
-          ),
+          decoration: BoxDecoration(gradient: AppTheme.photoScrim),
         ),
         Positioned(
           top: 10,

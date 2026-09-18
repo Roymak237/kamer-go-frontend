@@ -235,6 +235,7 @@ class _CreateItineraryScreenState extends State<CreateItineraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: AppTheme.appBarBackground,
         title: Text(_isEditing ? "Edit trip" : "Plan a new trip"),
       ),
       body: _loading

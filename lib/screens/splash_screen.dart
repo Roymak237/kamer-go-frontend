@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
+import "../utils/theme.dart";
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -43,13 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF007A4D), Color(0xFF005C3A)],
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: AppTheme.brandGradient),
           child: Center(
             child: FadeTransition(
               opacity: _fade,
@@ -66,12 +62,12 @@ class _SplashScreenState extends State<SplashScreen>
                     child: const Icon(
                       Icons.public,
                       size: 64,
-                      color: Color(0xFFFCD116),
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    "GlobeTrotter",
+                    "Kamer-Go",
                     style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w700,
@@ -84,14 +80,14 @@ class _SplashScreenState extends State<SplashScreen>
                     "Cameroon",
                     style: TextStyle(
                       fontSize: 16,
-                      color: const Color(0xFFFCD116).withValues(alpha: 0.95),
+                      color: Colors.white.withValues(alpha: 0.9),
                       letterSpacing: 2,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 32),
                   const CircularProgressIndicator(
-                    color: Color(0xFFFCD116),
+                    color: Colors.white,
                     strokeWidth: 2.5,
                   )
                 ],

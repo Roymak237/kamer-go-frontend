@@ -17,6 +17,7 @@ class ItineraryDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: AppTheme.appBarBackground,
         title: Text(itinerary.title),
         actions: [
           IconButton(
